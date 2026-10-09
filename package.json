@@ -1,0 +1,13 @@
+{
+  "name": "chale-city",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "build:vendor": "esbuild src/three-global.js --bundle --format=iife --minify --outfile=vendor/three-global.js --legal-comments=inline && esbuild src/sprite-data.js --bundle --format=iife --minify --loader:.webp=dataurl --outfile=vendor/sprite-data.js",
+    "dev": "python3 -m http.server 8765"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "three": "^0.186.1"
+  }
+}

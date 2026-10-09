@@ -7,7 +7,7 @@ Open `index.html` in a modern browser, or run `npm install` followed by `npm run
 - **WASD / arrows:** walk relative to the camera; steer and accelerate while driving.
 - **Space / BRAKE:** handbrake (slide the back out) while driving, or continue a conversation.
 - **E / IN/OUT:** enter a car when the prompt appears; press again to leave after stopping.
-- **J / JOB:** start or stop a hustle job in a taxi, trotro or okada.
+- **J / JOB:** go online or end your shift in a taxi, trotro or okada. Accept the booking that appears.
 - **Tab / MISSIONS:** open Kwesi's phone: missions and replays, your garage, your trotro fleet, and your rank and progress.
 - **C / VIEW:** switch between close follow, chase and wide views. The camera adjusts for walking and driving; close follow is the default.
 - **Drag the scene:** turn the camera. On a phone, drag on the right side.
@@ -15,6 +15,8 @@ Open `index.html` in a modern browser, or run `npm install` followed by `npm run
 
 ## How the game is built
 
+- **The story.** Kwesi comes home for his father's funeral. The family needs GH₵12,000 in fourteen days, and somebody is trying to take Papa's land. The people Kwesi drives across Accra help him earn the money and uncover what happened.
+- **Bookings and fuel.** Taxi customers and delivery cooks wait visibly at the pickup marker. Stop for the customer to approach and open the taxi door, or collect the food on your okada. Follow the route to the destination; taxi and delivery fares use the distance actually driven after pickup, plus tips for timely, careful work. Some customers need extra care or a quick pickup. The speedometer shows fuel. Blue markers show fuel stations: stop there to top up at GH₵2 per fuel point. Running dry stops the engine.
 - **Missions are a web, not a line.** Each mission lists the missions it needs (`req`), so several are open at once and each giver has a light beam on the map. Every mission is scored out of three stars: finishing it, beating its par time, and clean driving (low damage, nobody knocked down). Finished missions can be replayed from the phone for missing stars.
 - **Hustle jobs never run out.** Taxi fares (rushed passengers, egg-carriers, big men), trotro runs with real crowds at the stops, and okada food deliveries are generated on the fly. Streaks raise the pay.
 - **Your own cars.** After "Mate Work", Fitter Kojo at the Abossey Okai garage sells home-used cars and upgrades them: engine (speed and pull), tyres (grip, braking, new rims), armour (less damage, bull bar, rails, roof bar), spray paint and back-window stickers ("GOD DEY", "SEA NEVER DRY"...). Upgrades show on the car. Drive in and stop in the orange marker to open the garage. Owned cars are saved and park in the yard of the family house in Jamestown each time you load; the phone can send a fitter to bring one to you.
@@ -26,4 +28,5 @@ Open `index.html` in a modern browser, or run `npm install` followed by `npm run
 - **Visuals** are procedural Three.js: lofted car bodies with clear-coat paint and glass, real-time sun shadows, a full day/night cycle, raised pavements with open gutters, electric poles and sagging wires, zinc and clay roofs, polytanks, kiosks, market stalls, fishing canoes, and people in wax-print cloth.
 
 The street facade source art is in `assets/`. After changing it or upgrading Three.js, run `npm run build:vendor` to regenerate the bundled scripts in `vendor/`. The original Canvas view remains as a fallback if WebGL is unavailable.
+# Ghana-Game
 # Ghana-Game
