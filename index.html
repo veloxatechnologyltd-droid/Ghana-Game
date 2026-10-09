@@ -103,9 +103,9 @@ body.touch #keysP{pointer-events:auto;width:200px;font-size:11px}
 #dlgNext{font-size:12px;font-weight:600;color:#6b5a4a;text-align:right;margin-top:4px;letter-spacing:.04em}
 
 /* Screens */
-.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:radial-gradient(120% 90% at 20% 30%,rgba(13,11,10,.35),rgba(13,11,10,.86));overflow:auto}
+.screen{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;background:radial-gradient(120% 90% at 20% 30%,rgba(13,11,10,.35),rgba(13,11,10,.86));overflow:auto}
 #title{justify-content:flex-start;padding-left:max(24px,calc((100vw - 1180px)/2))}
-.card{width:min(560px,100%);min-width:0;display:flex;flex-direction:column;gap:18px}
+.card{width:min(560px,100%);min-width:0;margin:auto 0;display:flex;flex-direction:column;gap:18px}
 #title .card{width:min(610px,100%);max-width:calc(100vw - 32px);padding:30px 34px 28px;background:rgba(16,14,13,.82);border:1px solid rgba(251,241,220,.19);border-radius:12px;box-shadow:0 18px 80px rgba(0,0,0,.45);backdrop-filter:blur(7px)}
 #title h1{font-size:clamp(55px,8vw,82px);white-space:nowrap}
 .kente{height:12px;background:var(--kente);border-radius:2px;box-shadow:0 0 0 2px var(--ink)}
@@ -150,6 +150,31 @@ body.touch #zone{bottom:calc(196px + env(safe-area-inset-bottom,0px))}
 #bRun.on,#bLim.on{background:var(--green);color:#fff}
 body.touch #bRun,body.touch #bLim{left:auto;top:auto;right:186px;bottom:calc(30px + env(safe-area-inset-bottom,0px));width:72px;height:72px;padding:0;border-radius:50%;font-size:12px}
 #bJ{right:18px;bottom:calc(194px + env(safe-area-inset-bottom,0px));background:var(--green);color:#fff}
+/* In a vehicle on touch: wheel on the left, pedals bottom-right, the other buttons stacked above them. */
+#wheel{position:fixed;left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(26px + env(safe-area-inset-bottom,0px));width:150px;height:150px;pointer-events:auto;touch-action:none;display:none}
+#wheelRim{position:absolute;inset:0;border-radius:50%;border:15px solid rgba(20,16,13,.85);box-shadow:0 0 0 2px rgba(251,241,220,.45),inset 0 0 0 2px rgba(251,241,220,.45);background:linear-gradient(rgba(118,104,92,.9),rgba(118,104,92,.9)) center/100% 13px no-repeat,linear-gradient(rgba(118,104,92,.9),rgba(118,104,92,.9)) 50% 100%/13px 50% no-repeat}
+#wheelRim::before{content:'';position:absolute;left:50%;top:-15px;width:10px;height:15px;margin-left:-5px;background:var(--gold)}
+#wheelRim::after{content:'';position:absolute;left:50%;top:50%;width:36px;height:36px;margin:-18px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px var(--ink)}
+.tb.pedal{display:none;border-radius:16px;width:70px;font-size:13px}
+#bGas{right:16px;bottom:calc(30px + env(safe-area-inset-bottom,0px));height:110px;background:rgba(10,122,69,.88);color:#fff}
+#bBrk{right:94px;bottom:calc(30px + env(safe-area-inset-bottom,0px));height:86px;background:rgba(210,16,52,.85);color:#fff}
+#bGas.on,#bBrk.on{background:var(--gold);color:var(--ink)}
+body.driving #joyZone,body.driving #joyBase{display:none}
+body.driving #wheel,body.driving .tb.pedal{display:block}
+body.driving #bH,body.driving #bR,body.driving #bE,body.driving #bB,body.driving #bJ,body.touch.driving #bLim{width:62px;height:62px;font-size:11px}
+body.driving #bH{right:20px;bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+body.driving #bB{right:98px;bottom:calc(126px + env(safe-area-inset-bottom,0px))}
+body.touch.driving #bLim{right:176px;bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+body.driving #bE{right:176px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+body.driving #bR{right:254px;bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+body.driving #bJ{right:254px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+/* Portrait has height to spare but not width, so stack the buttons higher instead. */
+@media (max-aspect-ratio:1/1){
+  body.driving #bE{right:20px;bottom:calc(220px + env(safe-area-inset-bottom,0px))}
+  body.driving #bR{right:98px;bottom:calc(196px + env(safe-area-inset-bottom,0px))}
+  body.driving #bJ{right:176px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:420px){#wheel{width:124px;height:124px}#wheelRim{border-width:13px}}
 #overX:empty{display:none}
 .res{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .res li{display:grid;grid-template-columns:36px 1fr;column-gap:10px;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(251,241,220,.06)}
@@ -222,6 +247,19 @@ body.touch #bRun,body.touch #bLim{left:auto;top:auto;right:186px;bottom:calc(30p
   #keysP .tip{padding:5px 6px}
   body:not(.touch) #bRun,body:not(.touch) #bLim{left:128px;top:calc(62px + env(safe-area-inset-top,0px))}
 }
+/* Phones: keep the title card and the dialog box small enough to leave the game visible. */
+@media (max-width:600px),(max-height:500px){
+  #title .card{padding:18px 20px 16px;gap:12px}
+  #title h1{font-size:clamp(40px,11vw,60px)}
+  #title .lede{font-size:15px;line-height:1.42}
+  #title .keys{font-size:12.5px;gap:4px 12px}
+  #dlg{padding:9px 12px;gap:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+  #dlgPic{width:38px;height:38px;font-size:14px}
+  #dlgWho{font-size:12px}
+  #dlgTxt{font-size:15px;line-height:1.35;min-height:0}
+  #dlgNext{font-size:11px;margin-top:2px}
+}
+@media (max-height:500px){#title .lede{max-width:none}#dlg{width:min(620px,calc(100vw - 32px))}}
 @media (prefers-reduced-motion:reduce){
   #banner,#zone,#radio,#toast{transition:none}
   #stars.flash .star.on{animation:none}
@@ -269,8 +307,11 @@ body.touch #bRun,body.touch #bLim{left:auto;top:auto;right:186px;bottom:calc(30p
 <div id="touch" hidden>
   <div id="joyZone"></div>
   <div id="joyBase" hidden><div id="joyKnob"></div></div>
+  <div id="wheel" aria-label="Steering wheel"><div id="wheelRim"></div></div>
+  <button class="tb pedal" id="bGas">GAS</button>
+  <button class="tb pedal" id="bBrk">BRAKE</button>
   <button class="tb" id="bE">IN/OUT</button>
-  <button class="tb" id="bB">BRAKE</button>
+  <button class="tb" id="bB">H-BRAKE</button>
   <button class="tb" id="bH">HORN</button>
   <button class="tb" id="bR">RADIO</button>
   <button class="tb" id="bJ" hidden>JOB</button>
@@ -1074,6 +1115,8 @@ function sfxRing(){if(!AU.ctx)return;const t=AU.ctx.currentTime;for(let i=0;i<4;
 /* ================= INPUT ================= */
 const K={};
 const joy={id:null,x:0,y:0,m:0};let touchHB=false;
+// Touch driving: a steering wheel you turn with a finger (up to WMAX either way) plus gas and brake pedals.
+const wheel={id:null,r:0,last:0,shown:0},WMAX=2.1;let touchGas=false,touchBrk=false;
 addEventListener('keydown',e=>{
   if(e.repeat&&!['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))return;
   K[e.code]=true;
@@ -1102,6 +1145,18 @@ jz.addEventListener('pointermove',e=>{if(e.pointerId!==joy.id)return;let dx=e.cl
 const joyEnd=e=>{if(e.pointerId!==joy.id)return;joy.id=null;joy.x=joy.y=joy.m=0;jb.hidden=true};
 jz.addEventListener('pointerup',joyEnd);jz.addEventListener('pointercancel',joyEnd);
 const tbtn=(id,down,up)=>{const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();b.classList.add('on');audioInit();down()});const u=e=>{b.classList.remove('on');up&&up()};b.addEventListener('pointerup',u);b.addEventListener('pointercancel',u);b.addEventListener('pointerleave',u)};
+const wh=$('#wheel'),whr=$('#wheelRim');
+const wheelAng=e=>{const b=wh.getBoundingClientRect();return Math.atan2(e.clientY-b.top-b.height/2,e.clientX-b.left-b.width/2)};
+wh.addEventListener('pointerdown',e=>{e.preventDefault();wheel.id=e.pointerId;wheel.last=wheelAng(e);wh.setPointerCapture(e.pointerId);audioInit()});
+wh.addEventListener('pointermove',e=>{if(e.pointerId!==wheel.id)return;const b=wh.getBoundingClientRect(),dx=e.clientX-b.left-b.width/2,dy=e.clientY-b.top-b.height/2;
+  // Near the hub the angle jumps about, so only turn once the finger is out on the rim.
+  if(dx*dx+dy*dy<196)return;const a=Math.atan2(dy,dx);wheel.r=clamp(wheel.r+angDiff(a,wheel.last),-WMAX,WMAX);wheel.last=a});
+const wheelEnd=e=>{if(e.pointerId===wheel.id)wheel.id=null};
+wh.addEventListener('pointerup',wheelEnd);wh.addEventListener('pointercancel',wheelEnd);
+// The wheel springs back to centre when let go, like a real one.
+function wheelTick(dt){if(wheel.id===null&&wheel.r)wheel.r=Math.abs(wheel.r)<0.01?0:wheel.r*Math.exp(-dt*9);if(wheel.shown!==wheel.r){wheel.shown=wheel.r;whr.style.transform=`rotate(${wheel.r}rad)`}}
+tbtn('#bGas',()=>{touchGas=true},()=>{touchGas=false});
+tbtn('#bBrk',()=>{touchBrk=true},()=>{touchBrk=false});
 tbtn('#bE',()=>{if(S.mode==='play')toggleVehicle()});
 tbtn('#bB',()=>{touchHB=true},()=>{touchHB=false});
 tbtn('#bH',()=>{if(S.mode==='play')horn()});
@@ -1298,8 +1353,10 @@ function keepVehiclesOnRoad(){
   }
 }
 function onImpact(a,b,imp){
+  const pa=a===PL.veh,pb=b===PL.veh,prey=pa&&(b.mode==='flee'||b.chased)?b:pb&&(a.mode==='flee'||a.chased)?a:null;
+  // Rear-ending a getaway car only closes at the speed difference, so rams on it count from a much lighter knock.
+  if(prey&&imp>=25)damage(prey,8+(imp-25)*0.2,imp);
   if(imp<70)return;const d=(imp-70)*0.09;
-  const pa=a===PL.veh,pb=b===PL.veh;
   damage(a,d*(pb&&(a.mode==='flee'||a.chased)?2.4:1)*(pa&&a.type==='coffin'?1.3:1)*(pa&&b.mode==='hunt'?0.6:1),imp);
   damage(b,d*(pa&&(b.mode==='flee'||b.chased)?2.4:1)*(pb&&b.type==='coffin'?1.3:1)*(pb&&a.mode==='hunt'?0.6:1),imp);
   if((pa&&b.type==='police')||(pb&&a.type==='police'))crime(1,'ram');
@@ -1340,7 +1397,8 @@ function aiDrive(v,dt){
   const dx=wp.x-v.x,dy=wp.y-v.y,d=Math.hypot(dx,dy);
   if(d<26){v.wpi++;if(v.mode==='parking'&&v.wpi>=v.wps.length){v.mode='parked';v.arrived=true}}
   const diff=angDiff(Math.atan2(dy,dx),v.a);
-  const cruise=v.mode==='flee'?300:v.mode==='route'?(v.routeSpeed||180):v.mode==='parking'?90:v.cruise;
+  let cruise=v.mode==='flee'?270:v.mode==='route'?(v.routeSpeed||180):v.mode==='parking'?90:v.cruise;
+  if(v.chased)cruise*=0.55+0.45*v.hp/100; // a battered getaway car limps
   let target=Math.max(45,cruise*(1-Math.min(Math.abs(diff),1.3)/1.7));
   if(v.mode==='parking')target=Math.min(target,d*1.5);
   if(v.mode!=='flee'){const b=blocked(v);
@@ -1517,6 +1575,7 @@ function updPlayer(dt,inp){
   if(PL.veh){
     const v=PL.veh;let thr=0,steer=0;
     if(inp.kb){thr=-inp.ky;steer=inp.kx}
+    else if(isTouch){thr=inp.gas?1:inp.brk?-1:0;steer=inp.ws}
     else if(inp.jm>0.2){
       if(threeScene){thr=-inp.jy;steer=inp.jx}
       else{
@@ -1531,11 +1590,11 @@ function updPlayer(dt,inp){
     const oldX=v.x,oldY=v.y;
     v.thr=thr;physics(v,dt,thr,steer,inp.hb);
     const travelled=dist(oldX,oldY,v.x,v.y);
-    v.fuel=Math.max(0,v.fuel-travelled/45);
+    v.fuel=Math.max(0,v.fuel-travelled/110);
     if(v.own){v.own.fuel=Math.round(v.fuel);if(Math.abs((v.savedFuel??100)-v.fuel)>=5){v.savedFuel=v.fuel;save()}}
     if(S.cur&&S.cur.job&&S.ms.picked&&S.job&&S.job.veh===v)S.ms.tripDistance=(S.ms.tripDistance||0)+travelled;
     if(v.fuel<=0&&v.fuelWarn!==0){v.fuelWarn=0;toast('Out of fuel','Coast into a fuel station, or find another vehicle.')}
-    else if(v.fuel<20&&!v.fuelWarn){v.fuelWarn=1;toast('Fuel low','Follow a blue fuel marker and stop to top up.')}
+    else if(v.fuel<20&&!v.fuelWarn){v.fuelWarn=1;let ns=null,nd=1e9;for(const st of fuelStations()){const d=dist(v.x,v.y,st.pt.x,st.pt.y);if(d<nd){nd=d;ns=st}}toast('Fuel low',`${ns.name} is ${(nd*0.1/1000).toFixed(1)} km away. Follow the blue marker and stop there.`)}
     PL.x=v.x;PL.y=v.y;PL.a=v.a;
   }else{
     if(PL.downT>0){PL.downT-=dt;PL.walkSpeed=0;PL.moving=false;PL.running=false;return}
@@ -1567,7 +1626,7 @@ function updPlayer(dt,inp){
 }
 function readInput(){
   let x=0,y=0;if(K.ArrowLeft||K.KeyA)x--;if(K.ArrowRight||K.KeyD)x++;if(K.ArrowUp||K.KeyW)y--;if(K.ArrowDown||K.KeyS)y++;
-  return{kx:x,ky:y,kb:!!(x||y),jx:joy.x,jy:joy.y,jm:joy.m,run:K.ShiftLeft||K.ShiftRight,hb:K.Space||touchHB};
+  return{kx:x,ky:y,kb:!!(x||y),jx:joy.x,jy:joy.y,jm:joy.m,run:K.ShiftLeft||K.ShiftRight,hb:K.Space||touchHB,gas:touchGas,brk:touchBrk,ws:wheel.r/WMAX};
 }
 
 /* ================= WANTED ================= */
@@ -1851,7 +1910,8 @@ function fuelTick(){
   const stop=fuelStations().find(s=>dist(v.x,v.y,s.pt.x,s.pt.y)<65);
   if(!stop||Math.abs(v.f)>35||v.fuelStop===stop)return;
   const litres=Math.min(100-v.fuel,S.money/2);
-  if(litres<1){toast('No money for fuel','Earn a fare or use another vehicle.');v.fuelStop=stop;return}
+  // Broke? The attendant gives you enough to reach work, so an empty wallet never leaves you stranded.
+  if(litres<1){v.fuelStop=stop;if(v.fuel>=35){toast('No money for fuel','Earn a fare, then come back.');return}v.fuel=35;v.fuelWarn=0;toast('Pump boy dashed you fuel',`${stop.name} · “Chale, take small. Pay me next time.”`,true);sfxBlip();return}
   const cost=Math.ceil(litres*2);v.fuel=Math.min(100,v.fuel+litres);S.money-=cost;v.fuelWarn=0;v.fuelStop=stop;save();
   toast('Tank topped up',`${stop.name} · ${fmt(cost)} · ${Math.round(v.fuel)}% fuel`,true);sfxCash();
 }
@@ -2294,6 +2354,7 @@ function updCam(dt){
 function update(dt){
   S.t+=dt;S.clock=(S.clock+dt)%1440;
   for(let i=S.later.length-1;i>=0;i--){const l=S.later[i];l.t-=dt;if(l.t<=0){S.later.splice(i,1);l.fn();if(S.mode!=='play')return}}
+  if(isTouch){const d=!!PL.veh;if(d!==document.body.classList.contains('driving')){document.body.classList.toggle('driving',d);wheel.r=0;touchGas=touchBrk=false}wheelTick(dt)}
   const inp=readInput();
   updPlayer(dt,inp);
   for(const v of vehicles)if(v!==PL.veh)aiDrive(v,dt);
@@ -2345,7 +2406,7 @@ function toggleKeysPanel(){keysHidden=!keysHidden;try{localStorage.setItem('chal
 el.keysMini.addEventListener('click',toggleKeysPanel);
 el.keysP.addEventListener('click',()=>{if(isTouch)toggleKeysPanel()});
 let lastKeysHtml='';
-const TOUCH_KEY={'W A S D':'STICK','W / ↑':'STICK','S / ↓':'STICK','A / D':'STICK',SPACE:'BRAKE',E:'IN/OUT',H:'HORN',R:'RADIO',J:'JOB',TAB:'MISSIONS',C:'VIEW','P / ESC':'II',L:'LIMIT',SHIFT:'RUN',K:'TAP HERE'};
+const TOUCH_KEY={'W A S D':'STICK','W / ↑':'GAS','S / ↓':'BRAKE','A / D':'WHEEL',SPACE:'H-BRAKE',E:'IN/OUT',H:'HORN',R:'RADIO',J:'JOB',TAB:'MISSIONS',C:'VIEW','P / ESC':'II',L:'LIMIT',SHIFT:'RUN',K:'TAP HERE'};
 const KEY_CODES={'W A S D':['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'],'W / ↑':['KeyW','ArrowUp'],'S / ↓':['KeyS','ArrowDown'],'A / D':['KeyA','KeyD','ArrowLeft','ArrowRight'],SPACE:['Space'],E:['KeyE','KeyF'],H:['KeyH'],R:['KeyR'],J:['KeyJ'],TAB:['Tab'],C:['KeyC'],'P / ESC':['KeyP','Escape'],L:['KeyL'],SHIFT:['ShiftLeft','ShiftRight'],M:['KeyM'],K:['KeyK'],ENTER:['Enter']};
 function keysHtml(){
   const row=(k,label,o={})=>{if(isTouch&&k==='M')return'';const cap=isTouch?(TOUCH_KEY[k]||k):k;const down=!isTouch&&(KEY_CODES[k]||[]).some(c=>K[c]);
@@ -2394,7 +2455,7 @@ function keysHtml(){
     `<p class="foot">${isTouch?'Tap this panel to hide it':'Press K to hide this panel'}</p>`;
 }
 function keysTick(){
-  const show=S.mode==='play'||S.mode==='dialog';
+  const show=S.mode==='play'||(S.mode==='dialog'&&!isTouch);
   el.keysP.hidden=!show||keysHidden;el.keysMini.hidden=!show||!keysHidden;
   if(el.keysP.hidden)return;
   const h=keysHtml();if(h!==lastKeysHtml){lastKeysHtml=h;el.keysP.innerHTML=h}
@@ -2414,7 +2475,7 @@ function hudTick(dt){
   el.hbar.style.width=clamp(PL.hp,0,100)+'%';
   el.vbarW.hidden=!PL.veh;if(PL.veh)el.vbar.style.width=clamp(PL.veh.hp,0,100)+'%';
   keysTick();
-  el.speedo.hidden=!PL.veh;el.runB.hidden=!PL.onFoot||S.mode==='title';el.limB.hidden=!PL.veh||S.mode==='title';
+  el.speedo.hidden=!PL.veh;el.runB.hidden=!PL.onFoot||S.mode!=='play';el.limB.hidden=!PL.veh||S.mode!=='play';
   if(PL.veh){const top=(PL.veh.spec||VT[PL.veh.type]).max,kmh=Math.round(Math.abs(PL.veh.f)*KMH),max=Math.round(top*KMH);
     el.speedo.innerHTML=`<b>${kmh}</b> km/h<br><small>${PL.limit?`LIMITER ${PL.limit} · `:''}FUEL ${Math.ceil(PL.veh.fuel)}% · TOP ${max} km/h</small>`;el.speedo.classList.toggle('top',Math.abs(PL.veh.f)>top*0.95)}
   el.timer.hidden=!(S.timer>0);if(S.timer>0){const s=Math.ceil(S.timer);el.timer.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;el.timer.classList.toggle('low',s<=15)}
@@ -2877,7 +2938,7 @@ function newGame(saved){
 $('#bStart').addEventListener('click',()=>newGame(null));
 $('#bCont').addEventListener('click',()=>newGame(loadSave()));
 const sv=loadSave();if(sv&&(Object.keys(sv.done).length>0||sv.money>0)){const st=Object.values(sv.done).reduce((a,b)=>a+b,0);$('#bCont').hidden=false;$('#bCont').textContent=`Continue · ${Object.keys(sv.done).length}/${MISSIONS.length} missions · ★${st}`}
-if(isTouch){$('#keys').innerHTML='<dt>LEFT THUMB</dt><dd>Drag on the left to walk or steer</dd><dt>RIGHT SIDE</dt><dd>Drag to turn the camera</dd><dt>IN/OUT</dt><dd>Get in or out of a vehicle</dd><dt>VIEW</dt><dd>Close follow, chase or wide view</dd><dt>BRAKE · HORN</dt><dd>Handbrake · say hello or honk</dd><dt>TAP</dt><dd>Next line in a conversation</dd>'}
+if(isTouch){$('#keys').innerHTML='<dt>LEFT THUMB</dt><dd>Drag on the left to walk</dd><dt>WHEEL · GAS · BRAKE</dt><dd>Drive (they appear when you get in)</dd><dt>IN/OUT</dt><dd>Get in or out of a vehicle</dd><dt>RIGHT SIDE</dt><dd>Drag to turn the camera</dd><dt>TAP</dt><dd>Next line in a conversation</dd>'}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.mode==='play')pause()});
 try{window.claude?.hot?.snapshot?.(()=>({done:S.done,money:S.money}))}catch(e){}
 resize();
