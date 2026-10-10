@@ -281,6 +281,7 @@ body.touch #obj.min small{display:none}
   #stars.flash .star.on{animation:none}
 }
 </style>
+<script data-goatcounter="https://johnokyere.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
 
@@ -986,6 +987,8 @@ const END_LINES=[['Auntie Naa','Kwesi! Ei, look at this coffin! The whole of Jam
 
 /* ================= DOM HELPERS ================= */
 const el={hud:$('#hud'),obj:$('#obj'),action:$('#action'),clock:$('#clock'),money:$('#money'),fundTxt:$('#fundTxt'),fundBar:$('#fundBar'),stars:$('#stars'),hbar:$('#hbar em'),vbarW:$('#vbar'),vbar:$('#vbar em'),timer:$('#timer'),radio:$('#radio'),zone:$('#zone'),sub:$('#sub'),toast:$('#toast'),banner:$('#banner'),jobHud:$('#jobHud'),jobB:$('#bJ'),phoneB:$('#bPhone'),dlg:$('#dlg'),dlgPic:$('#dlgPic'),dlgWho:$('#dlgWho'),dlgTxt:$('#dlgTxt'),dlgNext:$('#dlgNext'),touch:$('#touch'),pauseB:$('#bPause'),camB:$('#bCam'),speedo:$('#speedo'),keysP:$('#keysP'),keysMini:$('#keysMini'),runB:$('#bRun'),limB:$('#bLim')};
+// GoatCounter event; a no-op when the tracker is blocked or still loading.
+const track=p=>{try{window.goatcounter?.count?.({path:p,title:p,event:true})}catch(_){}};
 const STAR='<svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.8 6.6 7.2.6-5.5 4.7 1.7 7-6.2-3.8-6.2 3.8 1.7-7L2 9.7l7.2-.6z"/></svg>';
 el.stars.innerHTML=STAR.repeat(5);
 const starEls=[...el.stars.children];
@@ -1848,6 +1851,7 @@ function completeMission(){
   const bonus=Math.max(0,stars-prev)*Math.max(50,Math.round(m.reward*0.08/10)*10);
   S.done[m.id]=Math.max(prev,stars);
   const bestWas=S.best[m.id];if(!bestWas||ms.t<bestWas)S.best[m.id]=Math.round(ms.t);
+  if(first)track('mission/'+m.id);
   S.money+=pay+bonus;sfxJingle(true);S.cool=3.5;save();setObj('');
   banner('Ayekoo!',`Mission passed · ${'★'.repeat(stars)}${'☆'.repeat(3-stars)}`);
   S.later.push({t:1.4,fn:()=>showResult(m,{stars,prev,fast,clean,t:ms.t,dmg:ms.dmg,hits:ms.hits,pay,bonus,first,record:bestWas&&ms.t<bestWas})});
@@ -2938,7 +2942,7 @@ function frame(now){
 
 /* ================= BOOT ================= */
 function newGame(saved){
-  audioInit();
+  audioInit();track(saved?'continue':'new-game');
   $('#title').hidden=true;el.hud.hidden=false;el.pauseB.hidden=false;el.camB.hidden=false;if(isTouch){el.touch.hidden=false;document.body.classList.add('touch')}
   resize();
   vehicles.length=0;peds.length=0;parts.length=0;bubbles.length=0;pallbearers=null;

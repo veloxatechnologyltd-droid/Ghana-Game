@@ -204,7 +204,7 @@ Clear `localStorage` (`chalecity.v2`, `chale-keys-hidden`) to test a fresh start
 
 - **Match the existing style:** dense, terse JS, short names (`v`, `p`, `st`, `dt`), many one-line functions, `const`/arrow helpers (`clamp`, `lerp`, `dist`, `pick`, `fmt`, `esc`, `$`). Don't reformat or "clean up" large regions, because the diffs become unreadable. Keep comments sparse and explain *why*, as the existing ones do.
 - **No new dependencies or build steps** for game logic. Everything runs as plain browser JS. New Three.js addons go through `src/three-global.js` and `build:vendor`.
-- **External scripts are not allowed.** The only remote resource is Google Fonts. Assets must be local.
+- **External scripts are not allowed.** The only remote resources are Google Fonts and the GoatCounter analytics tag (`gc.zgo.at`, allowed by the user, see MEMORY.md). Assets must be local.
 - **Money** is Ghana cedis and is always displayed through `fmt()` (`GH₵ 1,234`).
 - **Tone and setting:** Accra-specific (real districts, Ghanaian English and pidgin, Twi phrases, trotro slogans) and respectful. New dialogue should sound like the existing cast. Avoid generic placeholder text.
 - **UI text** lives in HTML ids referenced through `el.*` / `$()`. Update the README's Controls section when you change controls, and update `keysHtml()`/`TOUCH_KEY`/`KEY_CODES` too.
