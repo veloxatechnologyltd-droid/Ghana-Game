@@ -161,18 +161,29 @@ body.touch #bRun,body.touch #bLim{left:auto;top:auto;right:186px;bottom:calc(30p
 #bGas.on,#bBrk.on{background:var(--gold);color:var(--ink)}
 body.driving #joyZone,body.driving #joyBase{display:none}
 body.driving #wheel,body.driving .tb.pedal{display:block}
-body.driving #bH,body.driving #bR,body.driving #bE,body.driving #bB,body.driving #bJ,body.touch.driving #bLim{width:62px;height:62px;font-size:11px}
-body.driving #bH{right:20px;bottom:calc(150px + env(safe-area-inset-bottom,0px))}
-body.driving #bB{right:98px;bottom:calc(126px + env(safe-area-inset-bottom,0px))}
-body.touch.driving #bLim{right:176px;bottom:calc(30px + env(safe-area-inset-bottom,0px))}
-body.driving #bE{right:176px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}
-body.driving #bR{right:254px;bottom:calc(30px + env(safe-area-inset-bottom,0px))}
-body.driving #bJ{right:254px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}
-/* Portrait has height to spare but not width, so stack the buttons higher instead. */
+/* On foot only IN/OUT and WALK are needed, so the driving buttons hide. */
+#bMore{display:none}
+body.touch:not(.driving) #bH,body.touch:not(.driving) #bR,body.touch:not(.driving) #bB{display:none}
+body.touch:not(.driving) #bE{bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+/* Driving: wheel, pedals, IN/OUT and one ••• button. HORN, RADIO, H-BRAKE and LIMIT live behind it to keep the screen clear. */
+body.driving #bMore,body.driving #bE,body.driving #bB,body.driving #bH,body.driving #bR,body.driving #bJ,body.touch.driving #bLim{width:62px;height:62px;font-size:11px}
+body.tmenu #bMore{background:var(--gold);color:var(--ink)}
+body.driving #bMore{display:block;right:20px;bottom:calc(150px + env(safe-area-inset-bottom,0px));font-size:20px}
+body.driving:not(.tmenu) #bB,body.driving:not(.tmenu) #bH,body.driving:not(.tmenu) #bR,body.touch.driving:not(.tmenu) #bLim{display:none}
+body.driving #bE{right:176px;bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+body.driving #bJ{right:254px;bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+body.driving #bB{right:98px;bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+body.driving #bH{right:176px;bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+body.driving #bR{right:254px;bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+body.touch.driving #bLim{right:332px;bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+/* Portrait has height to spare but not width, so the menu opens upwards instead. */
 @media (max-aspect-ratio:1/1){
-  body.driving #bE{right:20px;bottom:calc(220px + env(safe-area-inset-bottom,0px))}
-  body.driving #bR{right:98px;bottom:calc(196px + env(safe-area-inset-bottom,0px))}
+  body.driving #bE{right:98px;bottom:calc(126px + env(safe-area-inset-bottom,0px))}
   body.driving #bJ{right:176px;bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  body.driving #bB{right:20px;bottom:calc(220px + env(safe-area-inset-bottom,0px))}
+  body.driving #bH{right:20px;bottom:calc(290px + env(safe-area-inset-bottom,0px))}
+  body.driving #bR{right:20px;bottom:calc(360px + env(safe-area-inset-bottom,0px))}
+  body.touch.driving #bLim{right:20px;bottom:calc(430px + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:420px){#wheel{width:124px;height:124px}#wheelRim{border-width:13px}}
 #overX:empty{display:none}
@@ -259,6 +270,11 @@ body.driving #bJ{right:254px;bottom:calc(100px + env(safe-area-inset-bottom,0px)
   #dlgTxt{font-size:15px;line-height:1.35;min-height:0}
   #dlgNext{font-size:11px;margin-top:2px}
 }
+body.touch #obj{pointer-events:auto}
+body.touch #obj.min{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;padding:5px 12px;opacity:.85}
+body.touch #obj.min small{display:none}
+/* Short landscape phones: the objective goes up between the top-left buttons and the stats, out of the road. */
+@media (max-height:500px){body.touch #obj{top:calc(8px + env(safe-area-inset-top,0px));left:350px;transform:none;max-width:max(150px,calc(100vw - 530px));font-size:12.5px;padding:6px 11px}}
 @media (max-height:500px){#title .lede{max-width:none}#dlg{width:min(620px,calc(100vw - 32px))}}
 @media (prefers-reduced-motion:reduce){
   #banner,#zone,#radio,#toast{transition:none}
@@ -315,6 +331,7 @@ body.driving #bJ{right:254px;bottom:calc(100px + env(safe-area-inset-bottom,0px)
   <button class="tb" id="bH">HORN</button>
   <button class="tb" id="bR">RADIO</button>
   <button class="tb" id="bJ" hidden>JOB</button>
+  <button class="tb" id="bMore" aria-label="More controls" aria-expanded="false">•••</button>
 </div>
 <button id="bPause" hidden aria-label="Pause">II</button>
 <button id="bCam" hidden aria-label="Change camera angle" title="Change camera angle (C)">VIEW</button>
@@ -973,11 +990,14 @@ const STAR='<svg class="star" viewBox="0 0 24 24"><path d="M12 2.5l2.8 6.6 7.2.6
 el.stars.innerHTML=STAR.repeat(5);
 const starEls=[...el.stars.children];
 let objCache='',objTitle='';
-function setObj(text){const t=S.mstate==='active'&&S.cur?S.cur.title:'';if(text===objCache&&t===objTitle)return;objCache=text;objTitle=t;el.obj.innerHTML=text?(t?`<small>${t.toUpperCase()}</small>`:'')+esc(text):''}
+function setObj(text){const t=S.mstate==='active'&&S.cur?S.cur.title:'';if(text===objCache&&t===objTitle)return;if(text!==objCache)objOpen();objCache=text;objTitle=t;el.obj.innerHTML=text?(t?`<small>${t.toUpperCase()}</small>`:'')+esc(text):''}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let subT=0;
 function sub(who,text,secs=4){const c=(SPK[who]||['#f5b300'])[0];el.sub.innerHTML=(who?`<b style="color:${c}">${esc(who)}:</b> `:'')+esc(text);subT=secs}
-let toastT=0;
+let toastT=0,objT=0;
+// On touch the objective shrinks to one line after a few seconds so it stops covering the road. Tap it to read it again.
+function objOpen(){el.obj.classList.remove('min');objT=7}
+el.obj.addEventListener('pointerdown',objOpen);
 function toast(big,small,cash){el.toast.classList.toggle('cash',!!cash);el.toast.innerHTML=esc(big)+(small?`<small>${esc(small)}</small>`:'');el.toast.classList.add('show');toastT=2.6}
 let bannerT=0;
 function banner(big,small,bad){el.banner.querySelector('b').textContent=big;el.banner.querySelector('span').textContent=small||'';el.banner.classList.toggle('bad',!!bad);el.banner.classList.add('show');bannerT=3.2}
@@ -1162,6 +1182,8 @@ tbtn('#bB',()=>{touchHB=true},()=>{touchHB=false});
 tbtn('#bH',()=>{if(S.mode==='play')horn()});
 tbtn('#bR',()=>{if(S.mode==='play')cycleRadio()});
 tbtn('#bJ',()=>{if(S.mode==='play')toggleJob()});
+const setMenu=on=>{document.body.classList.toggle('tmenu',on);$('#bMore').setAttribute('aria-expanded',String(on))};
+tbtn('#bMore',()=>setMenu(!document.body.classList.contains('tmenu')));
 el.phoneB.addEventListener('click',()=>{if(S.mode==='play')openPhone()});
 // Walk/run toggle for anyone without a Shift key, or who'd rather not hold it.
 function setRunMode(on){PL.runMode=on;el.runB.textContent=on?'RUN':'WALK';el.runB.classList.toggle('on',on);el.runB.setAttribute('aria-pressed',String(on))}
@@ -2354,7 +2376,7 @@ function updCam(dt){
 function update(dt){
   S.t+=dt;S.clock=(S.clock+dt)%1440;
   for(let i=S.later.length-1;i>=0;i--){const l=S.later[i];l.t-=dt;if(l.t<=0){S.later.splice(i,1);l.fn();if(S.mode!=='play')return}}
-  if(isTouch){const d=!!PL.veh;if(d!==document.body.classList.contains('driving')){document.body.classList.toggle('driving',d);wheel.r=0;touchGas=touchBrk=false}wheelTick(dt)}
+  if(isTouch){const d=!!PL.veh;if(d!==document.body.classList.contains('driving')){document.body.classList.toggle('driving',d);setMenu(false);wheel.r=0;touchGas=touchBrk=false}wheelTick(dt)}
   const inp=readInput();
   updPlayer(dt,inp);
   for(const v of vehicles)if(v!==PL.veh)aiDrive(v,dt);
@@ -2388,6 +2410,7 @@ function updCommon(dt){
   S.shake=Math.max(0,S.shake-dt*30);
   if(dlg){const L=dlg.lines[dlg.i];if(dlg.shown<L[1].length){dlg.shown=Math.min(L[1].length,dlg.shown+dt*60);renderDlg(false)}}
   if(subT>0){subT-=dt;if(subT<=0)el.sub.innerHTML=''}
+  if(objT>0){objT-=dt;if(objT<=0&&isTouch)el.obj.classList.add('min')}
   if(toastT>0){toastT-=dt;if(toastT<=0)el.toast.classList.remove('show')}
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)el.banner.classList.remove('show')}
   if(radioT>0){radioT-=dt;if(radioT<=0)el.radio.classList.remove('show')}
@@ -2481,7 +2504,7 @@ function hudTick(dt){
   el.timer.hidden=!(S.timer>0);if(S.timer>0){const s=Math.ceil(S.timer);el.timer.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;el.timer.classList.toggle('low',s<=15)}
   let action='',target=null;
   if(S.mode==='play'&&PL.onFoot){const v=nearestVehicle(46);if(v&&v.hp>0){action=v.locked?'Vehicle locked':`<b>${isTouch?'IN/OUT':'E'}</b> · Enter ${v.tag==='papaTaxi'?"Papa's taxi":VT[v.type].name.toLowerCase()}`;target=v}}
-  else if(S.mode==='play'&&PL.veh){
+  else if(S.mode==='play'&&PL.veh&&!isTouch){
     const lines=[];if(Math.abs(PL.veh.f)<90)lines.push(`<b>${isTouch?'IN/OUT':'E'}</b> · Get out`);
     const jk=jobFor(PL.veh);
     if(jk&&!S.job&&S.mstate!=='active'&&isDone(JOBS[jk].unlock))lines.push(`<b>${isTouch?'JOB':'J'}</b> · Start ${JOBS[jk].name.toLowerCase()}`);

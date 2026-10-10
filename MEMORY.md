@@ -12,3 +12,9 @@
 - Chases: any player impact of 25 or more on a `flee`/`chased` vehicle deals `8+(imp-25)*0.2` damage (the normal 70 threshold still applies on top). Flee cruise went from 300 to 270, and chased vehicles slow down as their hp drops.
 **Why:** The user reported the title and dialog covering the phone screen, running out of fuel with no way to refuel, and never winning the land guards' chase (m4). Root cause: a rear-end ram only closes at the speed difference (about 45 against a 300-cruise pickup), which was below the 70 impact damage threshold, so rams never did damage.
 **What was rejected:** Lowering the global impact threshold (it would make every fender-bender costly). Adding more fuel stations (the 5 existing ones were fine once a tank lasts longer and being broke can't strand you).
+
+## 2026-10-10, Decluttered phone controls and objective
+
+**What was decided:** On touch, on foot shows only IN/OUT and WALK (HORN, RADIO and H-BRAKE hide). While driving, only the wheel, GAS, BRAKE, IN/OUT and a ••• button show. ••• toggles `body.tmenu`, which reveals H-BRAKE, HORN, RADIO and LIMIT (a row above the pedals in landscape, a column above ••• in portrait), and the menu closes when Kwesi leaves the vehicle. The floating "IN/OUT · Get out" / "JOB · Start" label is not shown on touch while driving, because the buttons already say it. The objective box (`#obj`) shrinks to one line (`.min`) 7 s after its text changes on touch, and tapping it opens it again. On short landscape phones it sits at the top between the MISSIONS button and the stats.
+**Why:** The user said that on a phone the objective box, the "Get out" label and the row of buttons covered the game, and that the driving extras should not show on foot.
+**What was rejected:** Hiding IN/OUT behind the menu (it is used too often, and the mission text tells players to tap it). Removing the on-foot "Enter vehicle" label (it shows which car you are next to).
