@@ -1040,7 +1040,7 @@ function say(lines,cb){
 function renderDlg(newLine){
   const L=dlg.lines[dlg.i];let who=L[0],phone=false;
   if(who.endsWith(' (phone)')){who=who.slice(0,-8);phone=true}
-  if(newLine){const sp=SPK[who]||['#555','?'];el.dlgPic.style.background=sp[0];el.dlgPic.textContent=sp[1];el.dlgWho.innerHTML=`<span style="color:${sp[0]==='#d99a00'?'#9a6b00':sp[0]}">${esc(who.toUpperCase())}</span>`+(phone?'<em>On the phone</em>':'');for(const p of dialogActors)p.talking=p.name===who}
+  if(newLine){const sp=SPK[who]||['#555','?'];el.dlgPic.style.background=sp[0];el.dlgPic.textContent=sp[1];el.dlgWho.innerHTML=`<span style="color:${sp[0]==='#d99a00'?'#9a6b00':sp[0]}">${esc(who.toUpperCase())}</span>`+(phone?'<em>On the phone</em>':'');for(const p of dialogActors)p.talking=p.name===who;PL.talking=who==='Kwesi'&&dialogActors.length>0}
   el.dlgTxt.textContent=L[1].slice(0,Math.floor(dlg.shown));
   el.dlgNext.textContent=dlg.i<dlg.lines.length-1?(isTouch?'Tap for next':'Space for next'):(isTouch?'Tap to continue':'Space to continue');
 }
@@ -1048,7 +1048,7 @@ function advance(){
   if(!dlg)return;const L=dlg.lines[dlg.i];
   if(dlg.shown<L[1].length){dlg.shown=L[1].length;renderDlg(false);return}
   dlg.i++;dlg.shown=0;
-  if(dlg.i>=dlg.lines.length){const cb=dlg.cb;S.focus=dlg.focus;dlg=null;dialogActors.length=0;el.dlg.hidden=true;S.mode=S.prevMode||'play';if(S.mode==='play'&&isTouch)el.touch.hidden=false;cb&&cb();return}
+  if(dlg.i>=dlg.lines.length){const cb=dlg.cb;S.focus=dlg.focus;dlg=null;dialogActors.length=0;PL.talking=false;el.dlg.hidden=true;S.mode=S.prevMode||'play';if(S.mode==='play'&&isTouch)el.touch.hidden=false;cb&&cb();return}
   renderDlg(true);sfxBlip();
 }
 el.dlg.addEventListener('pointerdown',e=>{e.preventDefault();advance()});
@@ -3014,7 +3014,7 @@ function newGame(saved){
   vehicles.length=0;peds.length=0;parts.length=0;bubbles.length=0;pallbearers=null;
   for(let i=decor.length-1;i>=0;i--)if(decor[i].k==='canopy')decor.splice(i,1);
   Object.assign(S,{mode:'play',money:saved?saved.money:0,dm:saved?saved.money:0,clock:saved&&saved.clock?saved.clock:6*60+40,wanted:0,lostT:0,done:saved?{...saved.done}:{},best:saved?{...saved.best}:{},jobsBest:saved?{...(saved.jobsBest||{})}:{},jobSeen:saved?{...(saved.jobSeen||{})}:{},stats:saved?{...(saved.stats||{})}:{},neighbourChoice:saved&&saved.neighbourChoice||'',cur:null,job:null,event:null,eventT:50,track:null,mstate:'idle',step:0,ss:{},ms:{tags:[]},timer:-1,cool:saved?2:0.6,phoned:saved?{...(saved.phoned||{})}:{},pass:0,funeral:false,later:[],objTarget:null,mustLeave:null,focus:null,zone:'',lastMoneyShown:-1});
-  PL.veh=null;PL.onFoot=true;PL.hp=100;PL.downT=0;PL.moving=false;PL.walkSpeed=0;PL.running=false;const p=P(9,62);PL.x=p.x;PL.y=p.y;PL.a=0;cam.x=p.x;cam.y=p.y;cam.z=3.4;cam.zoom=1;cam.view=0;cam.angle=CAMERA_VIEWS[0].angle;cam.tilt=CAMERA_VIEWS[0].tilt;
+  PL.veh=null;PL.onFoot=true;PL.hp=100;PL.downT=0;PL.moving=false;PL.talking=false;PL.walkSpeed=0;PL.running=false;const p=P(9,62);PL.x=p.x;PL.y=p.y;PL.a=0;cam.x=p.x;cam.y=p.y;cam.z=3.4;cam.zoom=1;cam.view=0;cam.angle=CAMERA_VIEWS[0].angle;cam.tilt=CAMERA_VIEWS[0].tilt;
   if(threeScene)threeScene.resetCamera();
   for(let i=0;i<2;i++){const t=mkVeh('trotro',P(39+i,17).x,P(39,17).y,Math.PI/2,{keep:true});t.slogan=i?'SEA NEVER DRY':'GOD DEY'}
   if(isDone('m6')){S.funeral=true;addFuneralDecor()}
