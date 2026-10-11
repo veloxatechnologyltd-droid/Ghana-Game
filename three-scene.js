@@ -1207,6 +1207,27 @@ window.createChaleScene = function createChaleScene(data) {
       pending = model;
     }, undefined, error => console.warn('Detailed pedestrian unavailable:', file, error));
   }
+  // Rocketbox mocap on the same Bip01 skeleton; until it loads, the hand-posed gait below is used.
+  let realClips = null;
+  fetch('assets/characters/animations/rocketbox-anims.json').then(r => r.json()).then(data => {
+    const clips = {};
+    for (const [key, c] of Object.entries(data)) {
+      const tracks = [new THREE.VectorKeyframeTrack('Bip01.position', c.t, c.root)];
+      for (const bone in c.q) tracks.push(new THREE.QuaternionKeyframeTrack(bone + '.quaternion', c.t, c.q[bone]));
+      clips[key] = Object.assign(new THREE.AnimationClip(key, c.d, tracks), {stride: c.stride, off: c.off || 0});
+    }
+    realClips = clips;
+  }).catch(error => console.warn('Character animations unavailable:', error));
+  function realActions(mesh) {
+    const u = mesh.userData;
+    if (u.acts || !realClips) return u.acts;
+    const g = u.realKey.startsWith('woman') ? 'F' : 'M', mixer = new THREE.AnimationMixer(mesh.children[0]), acts = {mixer, phase: Math.random(), talk: 0};
+    for (const k of ['idle', 'walk', 'run', 'talk']) {const a = acts[k + 'A'] = mixer.clipAction(realClips[k + g]); a.setEffectiveWeight(0); a.play();}
+    // Walk and run follow the distance covered, not the clock, so feet don't slide.
+    acts.walkA.timeScale = acts.runA.timeScale = 0;
+    acts.idleA.time = Math.random() * acts.idleA.getClip().duration;
+    return u.acts = acts;
+  }
   function realPerson(key, parent = scene) {
     const template = realPedTemplates[key];
     const group = new THREE.Group();
@@ -1227,6 +1248,20 @@ window.createChaleScene = function createChaleScene(data) {
   function animateRealPerson(p, mesh, active, dt) {
     const gy = groundHeight(p.x, p.y);
     mesh.position.set(toX(p.x), gy, toZ(p.y)); mesh.rotation.y = -p.a;
+    const acts = realActions(mesh);
+    if (acts) {
+      const u = mesh.userData, step = u.lx == null ? 0 : Math.min(Math.hypot(p.x - u.lx, p.y - u.ly), 80 * dt); u.lx = p.x; u.ly = p.y;
+      u.speed = (u.speed || 0) + ((active && dt > 0 ? step / dt : 0) - (u.speed || 0)) * (1 - Math.exp(-dt * 10));
+      const walk = acts.walkA.getClip(), run = acts.runA.getClip(), pxPerCm = 1.96 / U / u.realTemplate.userData.height;
+      // Game walk is 20 px/s and run 36 px/s; blend between them by actual speed.
+      const r = clamp((u.speed - 22) / 12, 0, 1), m = clamp(u.speed / 5, 0, 1);
+      acts.phase = (acts.phase + step / (lerp(walk.stride, run.stride, r) * pxPerCm)) % 1;
+      acts.walkA.time = acts.phase * walk.duration; acts.runA.time = (acts.phase + run.off) % 1 * run.duration;
+      acts.talk += ((p.talking ? 1 : 0) - acts.talk) * (1 - Math.exp(-dt * 4));
+      acts.walkA.setEffectiveWeight(m * (1 - r)); acts.runA.setEffectiveWeight(m * r);
+      acts.talkA.setEffectiveWeight((1 - m) * acts.talk); acts.idleA.setEffectiveWeight((1 - m) * (1 - acts.talk));
+      acts.mixer.update(dt);
+    } else {
     const bones = mesh.userData.realBones;
     const gait = mesh.userData.gait = (mesh.userData.gait || 0) + ((active ? 1 : 0) - (mesh.userData.gait || 0)) * (1 - Math.exp(-dt * 8));
     const phase = p.ph || 0, swing = Math.sin(phase) * gait;
@@ -1241,6 +1276,7 @@ window.createChaleScene = function createChaleScene(data) {
     pose('Head','z',p.talking?Math.sin(performance.now()*0.009)*0.045:0);
     const template = mesh.userData.realTemplate;
     mesh.children[0].position.y = -template.userData.floor * (1.96 / template.userData.height) + (1 - Math.cos(phase * 2)) * gait * 0.012;
+    }
     if (p.state === 'down') {mesh.rotation.z = Math.PI / 2; mesh.position.y = gy + 0.25;}
     else mesh.rotation.z = 0;
   }
