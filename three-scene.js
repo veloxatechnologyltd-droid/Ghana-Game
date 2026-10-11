@@ -394,16 +394,18 @@ window.createChaleScene = function createChaleScene(data) {
   const foam = groundPlane(worldW + 300, 1.6, M.foam, worldW / 2, SEA_Y * T * U - 0.6, -0.06);
   const roadX0 = VX[0] * T * U, roadX1 = (VX[VX.length - 1] + 2) * T * U;
   const roadZ0 = HY[0] * T * U, roadZ1 = (HY[HY.length - 1] + 2) * T * U;
-  for (const x of VX) groundPlane(8, roadZ1 - roadZ0, M.road, (x + 1) * T * U, (roadZ0 + roadZ1) / 2, 0.03, 8);
+  // Side streets can be closed between junctions, so lay each block-length of road only where the map has it.
+  for (const x of VX) for (let k = 0; k < HY.length - 1; k++) if (at(x, HY[k] + 5) === TILE.RD) groundPlane(8, (HY[k + 1] - HY[k]) * T * U, M.road, (x + 1) * T * U, ((HY[k] + HY[k + 1]) / 2 + 1) * T * U, 0.03, 8);
   for (const y of HY) groundPlane(roadX1 - roadX0, 8, M.road, (roadX0 + roadX1) / 2, (y + 1) * T * U, 0.032, 8);
   for (const x of VX) for (const y of HY) groundPlane(8, 8, M.road, (x + 1) * T * U, (y + 1) * T * U, 0.034, 8);
   groundPlane(32, 32, M.road, 48 * T * U, 24 * T * U, 0.036, 8); // Kwame Nkrumah Circle
 
   const nodeAt = new Set(); for (const x of VX) for (const y of HY) nodeAt.add(x + ',' + y);
   const lines = instanced(flatPlane, M.line, 4000, {cast: false});
-  const nearNode = (px, pz) => VX.some(x => Math.abs(px - (x + 1) * 4) < 5.5) && HY.some(y => Math.abs(pz - (y + 1) * 4) < 5.5);
+  const live = (x, y) => at(x, y - 1) === TILE.RD || at(x, y + 2) === TILE.RD;
+  const nearNode = (px, pz) => VX.some(x => Math.abs(px - (x + 1) * 4) < 5.5 && HY.some(y => Math.abs(pz - (y + 1) * 4) < 5.5 && live(x, y)));
   const inCircle = (px, pz) => Math.abs(px - 48 * 4) < 17 && Math.abs(pz - 24 * 4) < 17;
-  for (const x of VX) for (let z = roadZ0 + 2; z < roadZ1 - 2; z += 7) {const cx = (x + 1) * 4; if (!nearNode(cx, z) && !inCircle(cx, z)) put(lines, cx, 0.045, z, 0.14, 1, 3);}
+  for (const x of VX) for (let z = roadZ0 + 2; z < roadZ1 - 2; z += 7) {const cx = (x + 1) * 4; if (!nearNode(cx, z) && !inCircle(cx, z) && at(x + 1, Math.floor(z / 4)) === TILE.RD) put(lines, cx, 0.045, z, 0.14, 1, 3);}
   for (const y of HY) for (let x = roadX0 + 2; x < roadX1 - 2; x += 7) {const cz = (y + 1) * 4; if (!nearNode(x, cz) && !inCircle(x, cz)) put(lines, x, 0.047, cz, 3, 1, 0.14);}
   // Zebra crossings near busy junctions.
   const zebra = instanced(flatPlane, M.zebra, 3000, {cast: false});
@@ -412,7 +414,7 @@ window.createChaleScene = function createChaleScene(data) {
     const cx = (x + 1) * 4, cz = (y + 1) * 4;
     for (const s of [-1, 1]) for (let k = -3; k <= 3; k++) {
       if (!inCircle(cx + s * 5.6, cz)) put(zebra, cx + s * 5.6, 0.049, cz + k * 1.05, 2.2, 1, 0.5);
-      if (!inCircle(cx, cz + s * 5.6)) put(zebra, cx + k * 1.05, 0.049, cz + s * 5.6, 0.5, 1, 2.2);
+      if (!inCircle(cx, cz + s * 5.6) && at(x + 1, Math.floor((cz + s * 5.6) / 4)) === TILE.RD) put(zebra, cx + k * 1.05, 0.049, cz + s * 5.6, 0.5, 1, 2.2);
     }
   }));
   done(lines, zebra);
@@ -1184,6 +1186,7 @@ window.createChaleScene = function createChaleScene(data) {
     const manager = new THREE.LoadingManager(); let pending = null;
     manager.onLoad = () => {if (pending) realPedTemplates[key] = pending;};
     manager.addHandler(/\.tga$/i, {
+      setPath() {return this;},
       load(url) {return new THREE.TextureLoader(manager).load(path + url.split(/[\\/]/).pop().replace(/\.tga$/i, '.webp'));}
     });
     new THREE.FBXLoader(manager).load(path + file + '.fbx', model => {

@@ -156,7 +156,7 @@ The code is one long IIFE split by banner comments such as `/* =================
 
 Key concepts:
 
-- **World is a tile grid.** `T=40` px per tile, `MW×MH = 112×82` tiles. Tile types: `G, RD, SW, BL, BE, SEA, PK, MK, TR` (grass/laterite, road, sidewalk, building, beach, sea, park, market, tree). Roads run along columns `VX` and rows `HY`; `P(tx,ty)` converts tile coords to world px (tile center). Mission and place coordinates are in **tiles**, e.g. `at:[9,61]`.
+- **World is a tile grid.** `T=40` px per tile, `MW×MH = 112×82` tiles. Tile types: `G, RD, SW, BL, BE, SEA, PK, MK, TR` (grass/laterite, road, sidewalk, building, beach, sea, park, market, tree). Roads run along columns `VX` and rows `HY`; `P(tx,ty)` converts tile coords to world px (tile center). Mission and place coordinates are in **tiles**, e.g. `at:[9,61]`. Some side streets are closed (`CUT`/`cutV` in `WORLD`): those columns have no road between y=23 and y=62, so check the tile before placing anything on a road column.
 - **World generation is seeded** (`seed=1957`, `rnd()`), so the city is the same on every load. Changing the order of `rnd()` calls in `genWorld` reshuffles the whole city.
 - **Global state:** `S` (game/mission/economy state, including `S.mode`: `title | play | dialog | phone | shop | paused | over`), `PL` (player), and the arrays `vehicles`, `peds`, `parts`, `bubbles`, `buildings`, `decor`.
 - **Game coordinates are 2D** (`x`, `y`, angle `a`). `three-scene.js` maps them to 3D with `U=0.1` (`toX`, `toZ`), with `y` becoming `z`.

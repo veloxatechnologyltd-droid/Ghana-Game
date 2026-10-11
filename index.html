@@ -445,6 +445,9 @@ const put=(x,y,v)=>{if(x>=0&&y>=0&&x<MW&&y<MH)map[y*MW+x]=v};
 const tileAt=(px,py)=>at(Math.floor(px/T),Math.floor(py/T));
 const solidAt=(px,py)=>SOLID[tileAt(px,py)]===1||Math.hypot(px-CX,py-CY)<ISL;
 const P=(tx,ty)=>({x:tx*T+T/2,y:ty*T+T/2});
+// Through-roads: these side streets stop at HY[2] and HY[NJ-1], so the roads between run twice as far between junctions.
+const CUT=new Set([1,3,5,7]);
+const cutV=(i,j)=>CUT.has(i)&&j>=2&&j<NJ-1; // vertical road i is closed between rows j and j+1
 const roadV=new Set(VX),roadH=new Set(HY);
 const isHRow=y=>roadH.has(y)||roadH.has(y-1), isVCol=x=>roadV.has(x)||roadV.has(x-1);
 const inCircle=(x,y)=>x>=44&&x<52&&y>=20&&y<28;
@@ -542,7 +545,7 @@ function genWorld(){
   const x0=VX[0],x1=VX[NI-1]+1,y0=HY[0];
   for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){let v=G;if(y>=SEA_Y)v=SEA;else if(y>=COAST)v=BE;else if(x<x0||x>x1||y<y0)v=TR;map[y*MW+x]=v;shade[y*MW+x]=(rnd()*3)|0}
   for(const y of HY)for(let x=x0;x<=x1;x++){put(x,y,RD);put(x,y+1,RD)}
-  for(const x of VX)for(let y=y0;y<=HY[NJ-1]+1;y++){put(x,y,RD);put(x+1,y,RD)}
+  VX.forEach((x,i)=>{for(let y=y0;y<=HY[NJ-1]+1;y++)if(!(CUT.has(i)&&y>HY[2]+1&&y<HY[NJ-1])){put(x,y,RD);put(x+1,y,RD)}});
   for(let y=20;y<28;y++)for(let x=44;x<52;x++)put(x,y,RD);
   for(let y=0;y<COAST;y++)for(let x=0;x<MW;x++){
     if(at(x,y)!==G)continue;let near=false;
@@ -574,6 +577,11 @@ function genWorld(){
     if((x>=17&&x<=23&&y>=26&&y<=31)||(x>=6&&x<=12&&y>=59&&y<=60)||(x>=39&&x<=42&&y>=16&&y<=21))continue; // keep the garage yard, home yard and station lot open for cars
     fillB(x,y,1,1,{kind:'kiosk',c:k[0],sign:k[1],sc:k[2],face:n[1]===1?0:n[1]===-1?Math.PI:n[0]===1?Math.PI/2:-Math.PI/2,roof:'flat'});
   }
+  // Build over the closed side streets last, so the seeded blocks above come out the same as before.
+  for(const i of CUT)for(let j=2;j<NJ-1;j++){
+    const b={x0:VX[i]-1,x1:VX[i]+2,y0:HY[j]+3,y1:HY[j+1]-2},dn=districtAt(VX[i],(b.y0+b.y1)>>1);
+    if(i===3&&j>=4)special('2,4',b,dn);else fillNormal(b,dn); // Makola market carries on across the old street
+  }
 }
 genWorld();
 
@@ -587,7 +595,7 @@ const MMS=3,mmBase=document.createElement('canvas');mmBase.width=MW*MMS;mmBase.h
 const nodePos=(i,j)=>({x:(VX[i]+1)*T,y:(HY[j]+1)*T});
 const isCircleN=n=>n[0]===4&&n[1]===2;
 const same=(a,b)=>a&&b&&a[0]===b[0]&&a[1]===b[1];
-function neighbors(n){const r=[],[i,j]=n;if(i>0)r.push([i-1,j]);if(i<NI-1)r.push([i+1,j]);if(j>0)r.push([i,j-1]);if(j<NJ-1)r.push([i,j+1]);return r}
+function neighbors(n){const r=[],[i,j]=n;if(i>0)r.push([i-1,j]);if(i<NI-1)r.push([i+1,j]);if(j>0&&!cutV(i,j-1))r.push([i,j-1]);if(j<NJ-1&&!cutV(i,j))r.push([i,j+1]);return r}
 function nearestNode(x,y){let best=[0,0],bd=1e12;for(let i=0;i<NI;i++)for(let j=0;j<NJ;j++){const p=nodePos(i,j);const d=(p.x-x)**2+(p.y-y)**2;if(d<bd){bd=d;best=[i,j]}}return best}
 function dirOf(a,b){return{x:Math.sign(b[0]-a[0]),y:Math.sign(b[1]-a[1])}}
 function edgeWps(from,to){
@@ -732,9 +740,9 @@ const MISSIONS=[
    ['Uncle Fiifi',"Then today you'll learn proper transport. Let's go! Ayekoo in advance."]],
   steps:[{t:'spawn',tag:'fiifi',type:'trotro',at:[42,20],a:0,color:'#f3efe4'},
    {t:'enter',tag:'fiifi',text:"Get in Uncle Fiifi's trotro."},
-   {t:'goto',at:[36,29],need:'fiifi',stop:true,crowd:4,board:4,label:'Odawna',text:'Pick up passengers at the Odawna stop. Stop inside the marker.',say:['Mate',"Kaneshie! Kaneshie! Circle–Kaneshie! One more, let's go!"]},
+   {t:'goto',at:[36,18],need:'fiifi',stop:true,crowd:4,board:4,label:'Odawna',text:'Pick up passengers at the Odawna stop. Stop inside the marker.',say:['Mate',"Kaneshie! Kaneshie! Circle–Kaneshie! One more, let's go!"]},
    {t:'goto',at:[25,19],need:'fiifi',stop:true,drop:true,pay:300,payLabel:'Fares',crowd:5,board:5,label:'Kaneshie Market',text:'Drop them at Kaneshie Market.',say:['Mate','Korle Bu! Korle Bu! Kaneshie–Korle Bu!']},
-   {t:'goto',at:[14,38],need:'fiifi',stop:true,drop:true,pay:350,payLabel:'Fares',crowd:4,board:4,label:'Korle Bu',text:'Next stop: Korle Bu.',say:['Mate','Circle! Circle! Who is going to Circle?']},
+   {t:'goto',at:[9,34],need:'fiifi',stop:true,drop:true,pay:350,payLabel:'Fares',crowd:4,board:4,label:'Korle Bu',text:'Next stop: Korle Bu.',say:['Mate','Circle! Circle! Who is going to Circle?']},
    {t:'goto',at:[47,30],need:'fiifi',stop:true,drop:true,pay:300,payLabel:'Fares',label:'Circle',text:'Last trip. Bring them back to Circle.'}],
   reward:400,rewardLabel:"Uncle Fiifi's share",
   outro:[['Uncle Fiifi','Hmm! Not bad for a London boy. Nobody died and my trotro is still standing.'],
@@ -750,7 +758,7 @@ const MISSIONS=[
    {t:'goto',at:[69,36],need:'okada',label:'Danquah Circle',text:'Deliver waakye to the office at Danquah Circle.',pay:150,payLabel:'Waakye + tip',say:['Customer','Finally! Is the shito plenty? Medaase, my brother.']},
    {t:'goto',at:[86,66],need:'okada',label:'Labadi Beach',text:'Next order: Labadi Beach.',pay:150,payLabel:'Waakye + tip',say:['Customer','Chale, you came fast! Keep the change.']},
    {t:'goto',at:[62,59],need:'okada',label:'Independence Square',text:'Next order: Independence Square.',pay:150,payLabel:'Waakye + tip',say:['Customer','Is the egg inside? ...Okay. You are a good man.']},
-   {t:'goto',at:[58,30],need:'okada',label:'Ridge',text:'Last order: Ridge.',pay:150,payLabel:'Waakye + tip',say:['Customer','Herh, it is still hot! Tell Maame Adwoa I will call her.']},
+   {t:'goto',at:[58,18],need:'okada',label:'Ridge',text:'Last order: Ridge.',pay:150,payLabel:'Waakye + tip',say:['Customer','Herh, it is still hot! Tell Maame Adwoa I will call her.']},
    {t:'timerStop'}],
   reward:1000,rewardLabel:'From Maame Adwoa by mobile money'},
  {id:'m4',req:['m2'],par:150,dmgPar:55,title:'This Land Is Not For Sale',at:[49,38],giver:'Lawyer Agyekum',hint:'Meet Lawyer Agyekum at his chambers in Adabraka.',
@@ -843,7 +851,7 @@ const MISSIONS=[
   intro:[['Auntie Esi','Kwesi Boateng! Your father used to stop at my stall every evening. He always asked if my daughter had eaten.'],
    ['Auntie Esi','Akosua is on a long shift at Korle Bu. I made kenkey and fish for her, but I cannot leave the stall. Can you take it to her?'],
    ['Kwesi','Of course, Auntie. I can carry it.']],
-  steps:[{t:'goto',at:[14,38],need:'any',stop:true,label:'Korle Bu',text:'Take Auntie Esi’s supper to Akosua at Korle Bu.',say:['Akosua','Medaase, Kwesi. Tell Mum I have eaten. And take this towards your father’s funeral.']},
+  steps:[{t:'goto',at:[9,34],need:'any',stop:true,label:'Korle Bu',text:'Take Auntie Esi’s supper to Akosua at Korle Bu.',say:['Akosua','Medaase, Kwesi. Tell Mum I have eaten. And take this towards your father’s funeral.']},
    {t:'goto',at:[9,61],stop:true,label:'Family house',text:'Go home and let Auntie Naa know Akosua got her supper.'}],
   reward:100,rewardLabel:'Funeral contribution from Akosua',
   outro:()=>S.neighbourChoice==='fare'?[['Auntie Naa','Esi says Akosua got her supper. She paid your fare? Good. Petrol is not free, my son.'],['Auntie Naa','Your papa would be glad you took care of our people. Come and eat before you go out again.']]:[['Auntie Naa','Esi says you refused her money. Your papa used to do that for her too.'],['Auntie Naa','Akosua has eaten, and there is food for you here as well. Come and sit small.']]},
@@ -976,7 +984,7 @@ const MISSIONS=[
    {t:'spawn',tag:'h1',type:'pickup',at:[80,33],a:Math.PI,mode:'hunt',locked:true,color:'#151515'},
    {t:'spawn',tag:'h2',type:'pickup',at:[58,33],a:0,mode:'hunt',locked:true,color:'#151515'},
    {t:'spawn',tag:'h3',type:'pickup',at:[69,47],a:-Math.PI/2,mode:'hunt',locked:true,color:'#151515'},
-   {t:'goto',at:[55,49],need:'lcar',stop:true,r:80,label:'High Court',text:"Get the ledger to the High Court! Don't let them wreck the car."},
+   {t:'goto',at:[55,52],need:'lcar',stop:true,r:80,label:'High Court',text:"Get the ledger to the High Court! Don't let them wreck the car."},
    {t:'timerStop'},{t:'calm',park:true},
    {t:'dialog',lines:[['Judge','The court has examined the ledger. Mr. Odartey, these are not loans. These are crimes.'],
     ['Chairman Odartey','My lady, I am a businessman! A philanthropist! I paid for the funeral jollof!'],
@@ -1327,7 +1335,8 @@ function physics(v,dt,thr,steer,hb){
   const maxV=s.max*(v.hp<30?0.62:1);
   // Speed-sensitive steering, eased in like a real steering rack.
   const playerBike=v.type==='okada'&&v.driver==='player';
-  const lock=s.steer*(playerBike?0.59:1)/(1+f*f/(playerBike?52000:v.driver==='player'?95000:130000));
+  // Street traffic gets extra lock so a trotro can make a junction corner without mounting the kerb.
+  const lock=s.steer*(playerBike?0.59:v.driver==='ai'&&(v.mode==='traffic'||v.mode==='route'||v.mode==='parking')?1.35:1)/(1+f*f/(playerBike?52000:v.driver==='player'?95000:130000));
   v.st=(v.st||0)+(steer*lock-(v.st||0))*Math.min(1,dt*(playerBike?4.5:v.driver==='player'?7:10));
   // Engine pulls hard at low speed and fades towards top speed.
   let acc=0;v.brakeHard=0;
@@ -1414,7 +1423,23 @@ function assignEdge(v){
   v.from=n;v.to=best;v.wps=edgeWps(n,best);v.wpi=0;
   const w=v.wps[0];if((w.x-v.x)*Math.cos(v.a)+(w.y-v.y)*Math.sin(v.a)<0)v.wpi=1;
 }
-function aiNextEdge(v){
+// Lane-to-lane turn through a junction, in px along (u) and right of (w) the way in. Right turns hug the corner, left turns sweep past the middle.
+function turnWps(n,dIn,dOut){
+  const c=nodePos(...n),cr=dIn.x*dOut.y-dIn.y*dOut.x;if(!cr)return null;
+  const pt=(u,w,s)=>({x:c.x+dIn.x*u-dIn.y*w,y:c.y+dIn.y*u+dIn.x*w,s});
+  return cr>0?[pt(-55,20,70),pt(-25,33),pt(-12,63)]:[pt(-28,20,95),pt(6,6),pt(20,-28)];
+}
+const jKey=n=>n[0]*10+n[1],axisOf=a=>Math.abs(Math.cos(a))>0.7?0:1;
+// A junction belongs to one road's traffic at a time; anything crossing on the other road makes us wait at the line.
+function juncClear(v,n){
+  const c=nodePos(...n),k=jKey(n),ax=axisOf(v.a);
+  for(const o of vehicles){if(o===v||Math.abs(o.x-c.x)>110||Math.abs(o.y-c.y)>110)continue;
+    if(o.jKey===k){if(o.jAx!==ax)return false;continue}
+    if(Math.abs(o.x-c.x)<44&&Math.abs(o.y-c.y)<44&&Math.abs(o.f)>15&&axisOf(o.a)!==ax)return false;
+  }
+  return true;
+}
+function aiNextEdge(v,early){
   const cur=v.to,prev=v.from;
   let opts=neighbors(cur).filter(n=>!same(n,prev));if(!opts.length)opts=neighbors(cur);
   let nxt;
@@ -1422,7 +1447,8 @@ function aiNextEdge(v){
   else if(v.mode==='route'){nxt=v.path.shift();if(!nxt){v.wps=[{x:v.park.x,y:v.park.y}];v.wpi=0;v.mode='parking';return}}
   else nxt=pick(opts);
   let w=[];if(isCircleN(cur))w=arcWps(dirOf(prev,cur),dirOf(cur,nxt));
-  v.from=cur;v.to=nxt;v.wps=w.concat(edgeWps(cur,nxt));v.wpi=0;
+  const tw=early&&turnWps(cur,dirOf(prev,cur),dirOf(cur,nxt));
+  v.from=cur;v.to=nxt;v.wps=tw?tw.concat(edgeWps(cur,nxt)[1]):w.concat(edgeWps(cur,nxt));v.wpi=0;
 }
 function blocked(v){
   const hx=Math.cos(v.a),hy=Math.sin(v.a),look=46+Math.max(0,v.f)*0.42+v.len/2;
@@ -1435,20 +1461,35 @@ function blocked(v){
 function aiDrive(v,dt){
   if(v.mode==='parked'||v.hp<=0||v.driver!=='ai'){physics(v,dt,0,0,true);return}
   if(v.mode==='police'||v.mode==='hunt'){policeDrive(v,dt);return}
+  if(v.jC){const jx=Math.abs(v.x-v.jC.x),jy=Math.abs(v.y-v.jC.y);if(jx<44&&jy<44)v.jIn=true;else if((v.jIn&&(jx>56||jy>56))||jx>150||jy>150)v.jKey=v.jC=null}
+  // Before a junction, wait for crossing traffic to clear, then plan the turn while there's still room to make it.
+  let hold=false;
+  if((v.mode==='traffic'||v.mode==='route')&&v.jKey==null&&v.to&&!isCircleN(v.to)&&v.wpi===v.wps.length-1){
+    const c=nodePos(...v.to),along=(c.x-v.x)*Math.cos(v.a)+(c.y-v.y)*Math.sin(v.a);
+    if(along<62+Math.max(0,v.f)**2/(2*spec(v).brake)){
+      if(juncClear(v,v.to)||v.waitT>8){v.jKey=jKey(v.to);v.jAx=axisOf(v.a);v.jC=c;v.jIn=false;v.waitT=0;aiNextEdge(v,true)}
+      else{hold=true;v.waitT=(v.waitT||0)+dt}
+    }
+  }
   let wp=v.wps[v.wpi];
   if(!wp){if(v.mode==='parking'){v.mode='parked';v.arrived=true;physics(v,dt,0,0,true);return}aiNextEdge(v);wp=v.wps[v.wpi];if(!wp){physics(v,dt,0,0,true);return}}
   const dx=wp.x-v.x,dy=wp.y-v.y,d=Math.hypot(dx,dy);
-  if(d<26){v.wpi++;if(v.mode==='parking'&&v.wpi>=v.wps.length){v.mode='parked';v.arrived=true}}
+  if(d<26&&!hold){v.wpi++;if(v.mode==='parking'&&v.wpi>=v.wps.length){v.mode='parked';v.arrived=true}}
   const diff=angDiff(Math.atan2(dy,dx),v.a);
   let cruise=v.mode==='flee'?270:v.mode==='route'?(v.routeSpeed||180):v.mode==='parking'?90:v.cruise;
   if(v.chased)cruise*=0.55+0.45*v.hp/100; // a battered getaway car limps
   let target=Math.max(45,cruise*(1-Math.min(Math.abs(diff),1.3)/1.7));
   if(v.mode==='parking')target=Math.min(target,d*1.5);
+  if(wp.s)target=Math.min(target,wp.s+d*0.9);
+  if(hold)target=0;
   if(v.mode!=='flee'){const b=blocked(v);
     if(b){v.blockT+=dt;if(v.blockT<5)target=0;if(b===2&&v.blockT>1.3&&v.honkT<=0){v.honkT=3.5;if(dist(v.x,v.y,PL.x,PL.y)<500)sfxHorn(v.type);if(Math.random()<0.6)bubbleAt(v.x,v.y-20,pick(['Move!','Chale, move!','Herh, you dey sleep?','Paa paa!']))}}
     else{v.blockT=Math.max(0,v.blockT-dt*2);if(v.blockT<0.01)v.blockT=0}
     if(v.blockT>6.5)v.blockT=0;}
   v.honkT-=dt;
+  // Wedged on a kerb with nothing in the way: back up a little and try the corner again.
+  if(v.revT>0){v.revT-=dt;physics(v,dt,-1,-clamp(diff*2.6,-1,1),false);return}
+  if(target>0&&Math.abs(v.f)<10){v.stuckT+=dt;if(v.stuckT>1.5){v.revT=0.7;v.stuckT=0}}else v.stuckT=0;
   const thr=target===0?(v.f>12?-1:0):(v.f<target-10?1:(v.f>target+25?-0.7:0));
   physics(v,dt,thr,clamp(diff*2.6,-1,1),target===0&&v.f<12);
 }
@@ -1948,7 +1989,7 @@ const JOBS={
   okada:{name:'Okada deliveries',veh:['okada'],unlock:'m3',how:'Get on any okada'}
 };
 const jobFor=v=>v?Object.keys(JOBS).find(k=>JOBS[k].veh.includes(v.type)):null;
-const PLACES=[['Makola Market',30,45],['Kaneshie Market',25,19],['Korle Bu',14,38],['Circle',47,30],['Oxford Street, Osu',70,45],['Labadi Beach',86,61],['Independence Square',62,59],['Jamestown',9,61],['Nima',72,15],['East Legon',95,30],['Airport Residential',100,12],['Adabraka',45,35],['Accra Central',52,45],['Teshie',96,61],['Kaneshie',20,12],['Ridge',58,30],['Danquah Circle',69,36],['Kokomlemle',40,25],['Mamprobi',12,50],['Dzorwulu',84,12]];
+const PLACES=[['Makola Market',30,45],['Kaneshie Market',25,19],['Korle Bu',9,35],['Circle',47,30],['Oxford Street, Osu',70,45],['Labadi Beach',86,61],['Independence Square',62,59],['Jamestown',9,61],['Nima',72,15],['East Legon',95,30],['Airport Residential',100,12],['Adabraka',45,35],['Accra Central',52,45],['Teshie',96,61],['Kaneshie',20,12],['Ridge',58,18],['Danquah Circle',69,36],['Kokomlemle',40,25],['Mamprobi',12,50],['Dzorwulu',84,12]];
 const FUEL_STATIONS=[['Circle fuel',47,31],['Kaneshie fuel',23,20],['Osu fuel',71,44],['East Legon fuel',94,30],['Jamestown fuel',12,59]];
 let fuelSpots=null;
 function fuelStations(){if(!fuelSpots)fuelSpots=FUEL_STATIONS.map(([name,x,y])=>({name,pt:findSpot(P(x,y).x,P(x,y).y,roadside)}));return fuelSpots}
@@ -2350,7 +2391,7 @@ function updateEvent(dt){
 }
 function endEvent(){if(S.event&&S.event.p){S.event.p.thief=false;S.event.p.keep=false}S.event=null;S.objTarget=null;setObj('')}
 function startEmergency(){
-  const from=randomPickup(),hosp=findSpot(P(14,37).x,P(14,37).y,roadside);
+  const from=randomPickup(),hosp=findSpot(P(9,35).x,P(9,35).y,roadside);
   const ped=mkPed(from.x,from.y,'woman');ped.state='wait';ped.wave=true;ped.keep=true;ped.c1='#d94f8a';
   const d=dist(from.x,from.y,hosp.x,hosp.y),secs=Math.round(d/200+18);
   const m={id:'event',event:true,title:'Emergency',who:'Pregnant woman',ped,jobFragile:20,fragileMsg:'"Ah! Stop! Let me find another car!"',chat:['Ahh! Hurry! It is coming!','Breathe... breathe... driver FASTER!','If this baby is a boy, I will name him after you!'],
@@ -2872,7 +2913,7 @@ function drawLights(V,dk){
     const hx=Math.cos(v.a),hy=Math.sin(v.a),fx=v.x+hx*v.len/2,fy=v.y+hy*v.len/2,L=v.type==='okada'?90:130,sp=0.32;
     ctx.fillStyle=`rgba(255,230,160,${0.16*dk/0.55})`;ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(fx+Math.cos(v.a-sp)*L,fy+Math.sin(v.a-sp)*L);ctx.lineTo(fx+Math.cos(v.a+sp)*L,fy+Math.sin(v.a+sp)*L);ctx.closePath();ctx.fill()}
   ctx.fillStyle=`rgba(255,190,90,${0.12*dk/0.55})`;
-  for(let i=0;i<NI;i++)for(let j=0;j<NJ;j++){const p=nodePos(i,j);if(p.x<V.L-80||p.x>V.R+80||p.y<V.T-80||p.y>V.B+80)continue;circ(p.x-T*1.2,p.y-T*1.2,46);circ(p.x+T*1.2,p.y+T*1.2,46)}
+  for(let i=0;i<NI;i++)for(let j=0;j<NJ;j++){const p=nodePos(i,j);if(cutV(i,j-1)||p.x<V.L-80||p.x>V.R+80||p.y<V.T-80||p.y>V.B+80)continue;circ(p.x-T*1.2,p.y-T*1.2,46);circ(p.x+T*1.2,p.y+T*1.2,46)}
   const lh=P(8,66);if(lh.x>V.L-500&&lh.x<V.R+500&&lh.y>V.T-500&&lh.y<V.B+500){const a=S.t*0.9;ctx.fillStyle=`rgba(255,240,180,${0.18*dk/0.55})`;ctx.beginPath();ctx.moveTo(lh.x,lh.y);ctx.lineTo(lh.x+Math.cos(a-0.12)*480,lh.y+Math.sin(a-0.12)*480);ctx.lineTo(lh.x+Math.cos(a+0.12)*480,lh.y+Math.sin(a+0.12)*480);ctx.closePath();ctx.fill()}
   ctx.globalCompositeOperation='source-over';
 }

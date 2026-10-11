@@ -43,3 +43,14 @@
 **Why:** The synthesized voice sounded strange, and the small angular figures did not feel human enough during conversations.
 **What was rejected:** Adding another synthetic voice or presenting the lightweight procedural figures as photorealistic people.
 
+## 2026-10-11, Traffic gives way at junctions and turns lane to lane
+
+**What was decided:** AI traffic (`traffic` and `route` modes) waits at the line when a vehicle on the crossing road holds the junction (`juncClear`, per-car `jKey`/`jAx`, 8 s fallback). Once it commits, it plans its turn early and follows lane-to-lane waypoints (`turnWps`), slowing for the turn. Street traffic gets 1.35× steering lock so trotros can make corners, and a car wedged on a kerb backs up and retries. Flee, police and chase AI are unchanged.
+**Why:** The user said the other cars just move around and should keep to their lanes. A headless measurement showed junction gridlock: cars stopped most of the time, 1,595 crosswise overlaps in 90 s, and trotros stuck on corners. After the change, stopped samples fell about 5×, overlaps about 7×, and wrong-side driving almost disappeared.
+**What was rejected:** Traffic lights (they need new visuals in both renderers, and give-way solves the gridlock on its own). Relaxing the kerb check for AI (cars would visibly mount pavements).
+
+## 2026-10-11, Closed side streets for longer through-roads
+
+**What was decided:** The vertical roads at VX[1], VX[3], VX[5] and VX[7] (x=14, 36, 58, 80) are closed between HY[2] (y=23) and the coast road (y=62), set by `CUT`/`cutV`. Rows y=33, 43 and 53 now meet a junction every 22 tiles instead of every 11. The closed strips are built over at the end of `genWorld` (Makola's strip becomes market), so seeded blocks keep their layout; only kiosks and street trees shift. The old junctions stay in the road graph as pass-through nodes. The 3D renderer lays roads, centre lines and zebras only where road tiles exist. Points that were on the closed streets moved: Odawna stop [36,18], Ridge [58,18], Korle Bu [9,34] / place [9,35] / emergency job P(9,35), High Court (c6) [55,52].
+**Why:** The user said the game was hard to play because a junction came every short distance, and chose closing some side streets over stretching the whole city.
+**What was rejected:** Stretching the whole grid 1.5× (rescales every coordinate and changes the city's look). Leaving the map as it was.
