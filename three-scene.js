@@ -1,5 +1,5 @@
 /* Chale City street-level renderer. Game rules and missions stay in index.html.
-   The city is procedural; one pedestrian uses a licensed detailed character asset. */
+   The city is procedural; nearby adults use licensed detailed character assets. */
 window.createChaleScene = function createChaleScene(data) {
   const THREE = window.THREE;
   if (!THREE) return null;
@@ -1178,7 +1178,9 @@ window.createChaleScene = function createChaleScene(data) {
   /* ---------- people ---------- */
   const realPedTemplates = {};
   for (const [key, folder, file] of [
-    ['male', 'rocketbox-male-04', 'Male_Adult_04'],
+    ['male', 'rocketbox-male-12', 'Male_Adult_12'],
+    ['maleB', 'rocketbox-male-04', 'Male_Adult_04'],
+    ['maleC', 'rocketbox-male-08', 'Male_Adult_08'],
     ['womanA', 'rocketbox-female-11', 'Female_Adult_11'],
     ['womanB', 'rocketbox-female-01', 'Female_Adult_01']
   ]) {
@@ -1421,10 +1423,12 @@ window.createChaleScene = function createChaleScene(data) {
   let dialogPlayer = person({skin: '#4f2f1f'}, true, dialogScene);
   let detailedPeds = new Set(), detailTick = 0;
   const personKey = p => {
-    if (p.kind !== 'woman') return 'male';
+    if (p.kind === 'kid' || p.kind === 'goat') return null;
+    if (p.name === 'Uncle Fiifi') return 'maleB';
+    if (p.name === 'Auntie Naa' || p.name === 'Maame Adwoa') return 'womanB';
     let n = Math.floor(p.x + p.y);
     if (p.name) {n = 0; for (let i = 0; i < p.name.length; i++) n += p.name.charCodeAt(i) * (i + 1);}
-    return n % 2 ? 'womanA' : 'womanB';
+    return p.kind === 'woman' ? (n % 2 ? 'womanA' : 'womanB') : (n % 5 === 0 ? 'maleC' : n % 2 ? 'male' : 'maleB');
   };
   const views = [
     {name: 'Close follow', foot: [3.8, 2.15, 1.25], car: [5.8, 2.8, 1.35], fov: 56},
@@ -1462,10 +1466,11 @@ window.createChaleScene = function createChaleScene(data) {
   function render({vehicles, peds, actors = [], parts = [], markers = [], arrowTo = null}) {
     const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
     dayCycle();
-    overheadWires.visible = S.mode !== 'dialog';
+    overheadWires.visible = poleMesh.visible = armMesh.visible = S.mode !== 'dialog';
     // A respray, sticker or upgrade bumps v.look; that car's mesh is rebuilt once.
     for (const v of vehicles) {const m = vehicleMeshes.get(v); if (m && m.userData.look !== (v.look || 0)) {m.parent && m.parent.remove(m); vehicleMeshes.delete(v);}}
     sync(vehicleMeshes, vehicles, vehicle, (v, mesh) => updateVehicle(v, mesh, dt));
+    for (const mesh of vehicleMeshes.values()) mesh.visible = !(S.mode === 'dialog' && PL.onFoot && actors.length);
     if (now - detailTick > 1200) {
       detailTick = now;
       detailedPeds = new Set(peds.filter(p => p.kind !== 'goat' && p.kind !== 'kid' && p.state !== 'down' && realPedTemplates[personKey(p)])
@@ -1489,9 +1494,9 @@ window.createChaleScene = function createChaleScene(data) {
       player = realPerson('male'); dialogPlayer = realPerson('male', dialogScene);
     }
     player.visible = S.mode !== 'title' && S.mode !== 'dialog' && PL.onFoot;
-    if (player.visible) animatePerson(PL, player, !!PL.moving, dt);
+    if (player.visible) player.userData.realBones ? animateRealPerson(PL, player, !!PL.moving, dt) : animatePerson(PL, player, !!PL.moving, dt);
     dialogPlayer.visible = S.mode === 'dialog' && PL.onFoot && actors.length > 0;
-    if (dialogPlayer.visible) animatePerson(PL, dialogPlayer, false, dt);
+    if (dialogPlayer.visible) dialogPlayer.userData.realBones ? animateRealPerson(PL, dialogPlayer, false, dt) : animatePerson(PL, dialogPlayer, false, dt);
     // Markers: mission givers, objectives and the GPS arrow.
     syncMarkers(S.mode === 'title' ? [] : markers);
     const actor = PL.veh || PL;
