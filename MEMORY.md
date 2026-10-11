@@ -24,3 +24,22 @@
 **What was decided:** Added the GoatCounter `count.js` tag (site code `johnokyere`) in `<head>`, plus a `track(path)` helper (beside `STAR` under DOM HELPERS) that sends events: `new-game` and `continue` from `newGame()`, and `mission/<id>` from `completeMission()` the first time each mission is passed. Together these give a funnel: visits → started → m1 → … → chapter 2 (`mission/c*`). `continue` counts returning players. The helper does nothing if the script is blocked. GoatCounter skips localhost, so dev runs aren't counted.
 **Why:** The user wants to see whether people adopt the game after the Netlify release, and explicitly allowed an external script for this.
 **What was rejected:** Netlify Analytics (paid, page views only). Cloudflare Web Analytics (needs Cloudflare hosting, no custom events). Google Analytics (cookies, so it needs a consent banner, and it's heavy). Plausible (paid). Self-hosted Umami (a server to run).
+
+## 2026-10-11, Jamestown neighbour story
+
+**What was decided:** Add a short side mission after "Akwaaba, Kwesi" in which Auntie Esi asks Kwesi to carry supper to her daughter Akosua at Korle Bu. The player can accept petrol money or help for free. The choice is saved, Auntie Naa responds when Kwesi returns home, and the Missions phone remembers it. Later ordinary taxi rides with Esi or Akosua refer to the errand.
+**Why:** A familiar person remembering Papa, a practical errand, a response at home, and later recognition make Jamestown feel like a community. Existing mission, dialogue, GPS, taxi and save systems support the story with a small change.
+**What was rejected:** A citywide reputation system and multiple new social activities before this first neighbourhood story has been played and assessed.
+
+## 2026-10-11, Visible and spoken conversations
+
+**What was decided:** In-person dialogue shows a character beside Kwesi and frames both people while they exchange lines. The speaker gestures as each line is shown. Dialogue lines are spoken with the browser's built-in speech engine, choosing an en-GH voice when the device offers one and following the game's sound mute. Phone dialogue remains voice-only. The 2D renderer shows the same meeting.
+**Why:** The user wants to see a person and hear a voice during conversations. This uses the existing character renderer and works in the static, offline game without adding a remote voice service.
+**What was rejected:** Treating the existing initials and text box as a person; assigning the existing young Rocketbox woman as every named Ghanaian woman; claiming device speech is a recorded Ghanaian actor or that the existing models are photorealistic.
+
+## 2026-10-11, Quiet dialogue and softer character shapes
+
+**What was decided:** Remove browser speech from all dialogue while keeping readable text and visible speaker gestures. Put in-person speakers nearer Kwesi in the world, and show both people in a foreground 3D conversation view so buildings cannot hide them. Narrow the dialogue field of view and round the procedural characters' shoulders, shoes and face details.
+**Why:** The synthesized voice sounded strange, and the small angular figures did not feel human enough during conversations.
+**What was rejected:** Adding another synthetic voice or presenting the lightweight procedural figures as photorealistic people.
+

@@ -14,6 +14,8 @@ window.createChaleScene = function createChaleScene(data) {
 
   /* ---------- renderer ---------- */
   const scene = new THREE.Scene();
+  const dialogScene = new THREE.Scene();
+  dialogScene.add(new THREE.HemisphereLight('#fff2d5', '#6b5444', 1.6), new THREE.DirectionalLight('#fff2cf', 2));
   const camera = new THREE.PerspectiveCamera(66, innerWidth / innerHeight, 0.1, 420);
   const renderer = new THREE.WebGLRenderer({antialias: true, powerPreference: 'high-performance'});
   const lowEnd = matchMedia('(pointer:coarse)').matches;
@@ -634,9 +636,10 @@ window.createChaleScene = function createChaleScene(data) {
       else if (pts.length) {addPoleLine(pts); pts.length = 0;}
     addPoleLine(pts);
   }
+  let overheadWires;
   {
     const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wirePts, 3));
-    scene.add(new THREE.LineSegments(wg, M.wire));
+    overheadWires = new THREE.LineSegments(wg, M.wire); scene.add(overheadWires);
   }
 
   /* ---------- trees, stalls, decor ---------- */
@@ -1171,52 +1174,49 @@ window.createChaleScene = function createChaleScene(data) {
   }
 
   /* ---------- people ---------- */
-  // One higher-detail pedestrian is a visual pilot. The procedural crowd stays
-  // available while the asset loads and on devices that cannot load it.
-  const realPedPath = 'assets/characters/rocketbox-female-11/';
-  let realPedTemplate = null, pendingRealPed = null, realPedTarget = null;
-  const realPedManager = new THREE.LoadingManager();
-  realPedManager.onLoad = () => {if (pendingRealPed) realPedTemplate = pendingRealPed;};
-  realPedManager.addHandler(/\.tga$/i, {
-    path: '',
-    setPath(path) {this.path = path; return this;},
-    load(url) {
-      const file = url.split(/[\\/]/).pop().replace(/\.tga$/i, '.webp');
-      return new THREE.TextureLoader(realPedManager).load(realPedPath + file);
-    }
-  });
-  new THREE.FBXLoader(realPedManager).load(realPedPath + 'Female_Adult_11.fbx', model => {
-    const bounds = new THREE.Box3().setFromObject(model);
-    if (!Number.isFinite(bounds.min.y) || bounds.max.y - bounds.min.y < 1) return;
-    model.userData.height = bounds.max.y - bounds.min.y;
-    model.userData.floor = bounds.min.y;
-    model.traverse(node => {
-      if (!node.isMesh) return;
-      node.castShadow = true;
-      node.receiveShadow = false;
-      for (const material of Array.isArray(node.material) ? node.material : [node.material]) {
-        // The source FBX carries dark Max diffuse colours that multiply its photos.
-        material.color.set('#ffffff');
-        material.roughness = 0.85;
-        if (material.name.includes('opacity')) {material.side = THREE.DoubleSide; material.depthWrite = false;}
-      }
+  const realPedTemplates = {};
+  for (const [key, folder, file] of [
+    ['male', 'rocketbox-male-04', 'Male_Adult_04'],
+    ['womanA', 'rocketbox-female-11', 'Female_Adult_11'],
+    ['womanB', 'rocketbox-female-01', 'Female_Adult_01']
+  ]) {
+    const path = 'assets/characters/' + folder + '/';
+    const manager = new THREE.LoadingManager(); let pending = null;
+    manager.onLoad = () => {if (pending) realPedTemplates[key] = pending;};
+    manager.addHandler(/\.tga$/i, {
+      load(url) {return new THREE.TextureLoader(manager).load(path + url.split(/[\\/]/).pop().replace(/\.tga$/i, '.webp'));}
     });
-    pendingRealPed = model;
-  }, undefined, error => console.warn('Detailed pedestrian unavailable:', error));
-  function realPerson() {
+    new THREE.FBXLoader(manager).load(path + file + '.fbx', model => {
+      const bounds = new THREE.Box3().setFromObject(model);
+      if (!Number.isFinite(bounds.min.y) || bounds.max.y - bounds.min.y < 1) return;
+      model.userData.height = bounds.max.y - bounds.min.y;
+      model.userData.floor = bounds.min.y;
+      model.traverse(node => {
+        if (!node.isMesh) return;
+        node.castShadow = true; node.receiveShadow = false;
+        for (const material of Array.isArray(node.material) ? node.material : [node.material]) {
+          material.color.set('#ffffff'); material.roughness = 0.85;
+          if (material.name.includes('opacity')) {material.side = THREE.DoubleSide; material.depthWrite = false;}
+        }
+      });
+      pending = model;
+    }, undefined, error => console.warn('Detailed pedestrian unavailable:', file, error));
+  }
+  function realPerson(key, parent = scene) {
+    const template = realPedTemplates[key];
     const group = new THREE.Group();
-    const model = THREE.cloneSkeleton(realPedTemplate);
-    const scale = 1.96 / realPedTemplate.userData.height;
+    const model = THREE.cloneSkeleton(template);
+    const scale = 1.96 / template.userData.height;
     model.scale.setScalar(scale);
-    model.position.y = -realPedTemplate.userData.floor * scale;
+    model.position.y = -template.userData.floor * scale;
     model.rotation.y = Math.PI / 2;
     group.add(model);
     const bones = {};
     model.traverse(node => {if (node.isBone) bones[node.name] = {node, base: node.rotation.clone()};});
-    const shadow = new THREE.Mesh(flatPlane, M.contact);
-    shadow.scale.set(0.8, 1, 0.8); shadow.position.y = 0.02; group.add(shadow);
-    group.userData.realBones = bones;
-    scene.add(group);
+    if (parent === scene) {const shadow = new THREE.Mesh(flatPlane, M.contact);
+      shadow.scale.set(0.8, 1, 0.8); shadow.position.y = 0.02; group.add(shadow);}
+    group.userData.realBones = bones; group.userData.realTemplate = template; group.userData.realKey = key;
+    parent.add(group);
     return group;
   }
   function animateRealPerson(p, mesh, active, dt) {
@@ -1233,7 +1233,9 @@ window.createChaleScene = function createChaleScene(data) {
     pose('L_UpperArm', 'y', 0.72); pose('R_UpperArm', 'y', -0.72);
     pose('L_UpperArm', 'z', -swing * 0.24); pose('R_UpperArm', 'z', swing * 0.24);
     pose('Spine', 'z', Math.sin(phase * 2) * gait * 0.025);
-    mesh.children[0].position.y = -realPedTemplate.userData.floor * (1.96 / realPedTemplate.userData.height) + (1 - Math.cos(phase * 2)) * gait * 0.012;
+    pose('Head','z',p.talking?Math.sin(performance.now()*0.009)*0.045:0);
+    const template = mesh.userData.realTemplate;
+    mesh.children[0].position.y = -template.userData.floor * (1.96 / template.userData.height) + (1 - Math.cos(phase * 2)) * gait * 0.012;
     if (p.state === 'down') {mesh.rotation.z = Math.PI / 2; mesh.position.y = gy + 0.25;}
     else mesh.rotation.z = 0;
   }
@@ -1244,23 +1246,29 @@ window.createChaleScene = function createChaleScene(data) {
     const group = new THREE.Group();
     const seedN = Math.abs(Math.floor((p.x || 1) * 13 + (p.y || 1) * 7 + (p.ph || 0) * 100)) || ((Math.random() * 997) | 0);
     const woman = p.kind === 'woman' || p.wrap;
-    const usePrint = !player && (woman ? seedN % 10 < 7 : seedN % 10 < 3);
+    const usePrint = !player && (woman ? seedN % 10 < 3 : seedN % 10 < 2);
     const skin = mat(p.skin || '#573621', {roughness: 0.7});
     const shirt = player ? mat('#253756') : cloth(p.c1 || '#a93430', usePrint ? seedN : null);
     const trousers = player ? mat('#2b2d30') : mat(p.c2 || '#30353b');
     const hairM = mat('#141110', {roughness: 1});
     const body = new THREE.Group(); body.scale.setScalar(p.kind === 'kid' ? 0.72 : 0.96 + (seedN % 9) * 0.012); group.add(body);
     // torso and hips
-    add(body, capsule(0.17, 0.3), shirt, 0, 1.33, 0, 0.82, 1, 1.1);
+    add(body, capsule(0.17, 0.3), shirt, 0, 1.33, 0, 0.86, 1, 1.15);
+    add(body, ballGeo, shirt, 0, 1.49, 0, 0.18, 0.095, 0.25);
     add(body, ballGeo, trousers, 0, 1.0, 0, 0.15, 0.13, 0.18);
     add(body, cylGeo, skin, 0, 1.66, 0, 0.055, 0.12, 0.055);
     add(body, ballGeo, skin, 0.01, 1.8, 0, 0.112, 0.14, 0.105);
     // The face points along local +X, the same direction used by walking.
-    add(body, ballGeo, skin, 0.115, 1.775, 0, 0.032, 0.038, 0.025);
+    add(body, ballGeo, skin, 0.14, 1.775, 0, 0.032, 0.038, 0.025);
     for (const side of [-1, 1]) {
       add(body, ballGeo, skin, 0.014, 1.79, side * 0.106, 0.022, 0.044, 0.021);
-      add(body, ballGeo, M.dark, 0.102, 1.818, side * 0.046, 0.006, 0.01, 0.009);
+      if (player || p.name) {
+        add(body, ballGeo, mat('#b79a83'), 0.119, 1.818, side * 0.047, 0.014, 0.012, 0.016);
+        add(body, ballGeo, M.dark, 0.132, 1.818, side * 0.047, 0.006, 0.008, 0.009);
+      } else add(body, ballGeo, M.dark, 0.119, 1.818, side * 0.046, 0.008, 0.01, 0.011);
+      add(body, ballGeo, shirt, 0, 1.51, side * 0.18, 0.095, 0.095, 0.09);
     }
+    add(body, ballGeo, hairM, -0.045, 1.89, 0, 0.09, 0.035, 0.102);
     if (woman && seedN % 3 !== 2) {
       const wrapM = cloth(p.c1, seedN + 3);
       add(body, ballGeo, wrapM, -0.01, 1.9, 0, 0.14, 0.11, 0.135);
@@ -1279,11 +1287,13 @@ window.createChaleScene = function createChaleScene(data) {
       const hip = new THREE.Group(); hip.position.set(0, 0.96, side * 0.1); body.add(hip);
       add(hip, capsule(0.075, 0.3), trousers, 0, -0.22, 0);
       const knee = new THREE.Group(); knee.position.y = -0.46; hip.add(knee);
+      add(knee, ballGeo, p.shorts ? skin : trousers, 0, 0, 0, 0.075, 0.09, 0.075);
       add(knee, capsule(0.06, 0.32), p.shorts ? skin : trousers, 0, -0.22, 0);
       const foot = new THREE.Group(); foot.position.y = -0.45; knee.add(foot);
-      add(foot, boxGeo, player ? mat('#e9e4da') : M.dark, 0.06, -0.03, 0, 0.25, 0.08, 0.11);
+      add(foot, ballGeo, player ? mat('#e9e4da') : M.dark, 0.065, -0.03, 0, 0.15, 0.055, 0.075);
       parts.hips.push(hip); parts.knees.push(knee); parts.feet.push(foot);
       const arm = new THREE.Group(); arm.position.set(0, 1.55, side * 0.215); body.add(arm);
+      add(arm, ballGeo, shirt, 0, -0.04, 0, 0.09, 0.1, 0.085);
       add(arm, capsule(0.058, 0.16), shirt, 0, -0.1, 0);
       add(arm, capsule(0.045, 0.12), player ? shirt : skin, 0, -0.25, 0);
       const elbow = new THREE.Group(); elbow.position.y = -0.33; arm.add(elbow);
@@ -1301,6 +1311,7 @@ window.createChaleScene = function createChaleScene(data) {
       parts.hawker = true;
     }
     if (p.bag && !player) add(body, boxGeo, mat('#66503d'), -0.18, 1.26, 0.16, 0.12, 0.32, 0.26);
+    if (p.name || player) parts.mouth = add(body, ballGeo, mat('#432019'), 0.13, 1.735, 0, 0.007, 0.008, 0.026);
     group.traverse(o => {if (o.isMesh) {o.castShadow = true; o.receiveShadow = false;}});
     const shadow = new THREE.Mesh(flatPlane, M.contact); shadow.scale.set(0.8, 1, 0.8); shadow.position.y = 0.02; group.add(shadow);
     group.userData.parts = parts;
@@ -1345,6 +1356,7 @@ window.createChaleScene = function createChaleScene(data) {
     if (parts.hawker) for (let i = 0; i < 2; i++) {parts.arms[i].shoulder.rotation.x = -side[i] * 2.75; parts.arms[i].elbow.rotation.z = 0.2;}
     else if (p.wave) {const a = parts.arms[1]; a.shoulder.rotation.x = -2.5; a.elbow.rotation.z = 0.5 + Math.sin(S.t * 9) * 0.45;}
     else if (p.activity === 'phone' && !active) {const a = parts.arms[1]; a.shoulder.rotation.set(0.25, 0, 0.55); a.elbow.rotation.z = 2.45;}
+    if(p.talking){const t=Math.sin(performance.now()*0.013);parts.body.rotation.z=t*0.025;parts.arms[0].shoulder.rotation.z=-0.16+t*0.08;if(parts.mouth)parts.mouth.scale.y=1.5+Math.abs(t)*2}
     if (p.state === 'down') {mesh.rotation.z = Math.PI / 2; mesh.position.y = gy + 0.25;}
     else mesh.rotation.z = 0;
   }
@@ -1401,8 +1413,16 @@ window.createChaleScene = function createChaleScene(data) {
   }
 
   /* ---------- camera ---------- */
-  const pedMeshes = new Map(), vehicleMeshes = new Map();
-  const player = person({skin: '#4f2f1f'}, true);
+  const pedMeshes = new Map(), dialogMeshes = new Map(), vehicleMeshes = new Map();
+  let player = person({skin: '#4f2f1f'}, true);
+  let dialogPlayer = person({skin: '#4f2f1f'}, true, dialogScene);
+  let detailedPeds = new Set(), detailTick = 0;
+  const personKey = p => {
+    if (p.kind !== 'woman') return 'male';
+    let n = Math.floor(p.x + p.y);
+    if (p.name) {n = 0; for (let i = 0; i < p.name.length; i++) n += p.name.charCodeAt(i) * (i + 1);}
+    return n % 2 ? 'womanA' : 'womanB';
+  };
   const views = [
     {name: 'Close follow', foot: [3.8, 2.15, 1.25], car: [5.8, 2.8, 1.35], fov: 56},
     {name: 'Chase view', foot: [6.5, 3.1, 1.35], car: [8.2, 3.8, 1.45], fov: 62},
@@ -1436,18 +1456,21 @@ window.createChaleScene = function createChaleScene(data) {
   /* ---------- frame ---------- */
   let last = performance.now();
   const ray = new THREE.Raycaster(), tmpV = new THREE.Vector3();
-  function render({vehicles, peds, parts = [], markers = [], arrowTo = null}) {
+  function render({vehicles, peds, actors = [], parts = [], markers = [], arrowTo = null}) {
     const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
     dayCycle();
+    overheadWires.visible = S.mode !== 'dialog';
     // A respray, sticker or upgrade bumps v.look; that car's mesh is rebuilt once.
     for (const v of vehicles) {const m = vehicleMeshes.get(v); if (m && m.userData.look !== (v.look || 0)) {m.parent && m.parent.remove(m); vehicleMeshes.delete(v);}}
     sync(vehicleMeshes, vehicles, vehicle, (v, mesh) => updateVehicle(v, mesh, dt));
-    if (realPedTemplate && (!realPedTarget || !peds.includes(realPedTarget))) {
-      realPedTarget = peds.filter(p => p.kind === 'woman' && !p.keep && p.state !== 'down')
-        .sort((a, b) => Math.hypot(a.x - PL.x, a.y - PL.y) - Math.hypot(b.x - PL.x, b.y - PL.y))[0] || null;
-      if (realPedTarget) {const old = pedMeshes.get(realPedTarget); if (old) {old.parent.remove(old); pedMeshes.delete(realPedTarget);}}
+    if (now - detailTick > 1200) {
+      detailTick = now;
+      detailedPeds = new Set(peds.filter(p => p.kind !== 'goat' && p.kind !== 'kid' && p.state !== 'down' && realPedTemplates[personKey(p)])
+        .sort((a, b) => Math.hypot(a.x - PL.x, a.y - PL.y) - Math.hypot(b.x - PL.x, b.y - PL.y)).slice(0, lowEnd ? 3 : 8));
     }
-    sync(pedMeshes, peds, p => p.kind === 'goat' ? goat(p) : p === realPedTarget ? realPerson() : person(p), (p, mesh) => {
+    for (const p of peds) {const mesh = pedMeshes.get(p), key = detailedPeds.has(p) ? personKey(p) : null;
+      if (mesh && (mesh.userData.realKey || null) !== key) {mesh.parent.remove(mesh); pedMeshes.delete(p);}}
+    sync(pedMeshes, peds, p => p.kind === 'goat' ? goat(p) : detailedPeds.has(p) ? realPerson(personKey(p)) : person(p), (p, mesh) => {
       if (p.kind === 'goat') {
         mesh.position.set(toX(p.x), groundHeight(p.x, p.y), toZ(p.y)); mesh.rotation.y = -p.a;
         const legs = mesh.userData.legs; if (legs) legs.forEach((l, i) => {l.rotation.z = p.moving ? Math.sin((p.ph || 0) * 2 + i * Math.PI / 2) * 0.5 : 0;});
@@ -1455,8 +1478,17 @@ window.createChaleScene = function createChaleScene(data) {
       } else if (mesh.userData.realBones) animateRealPerson(p, mesh, !!p.moving, dt);
       else animatePerson(p, mesh, !!p.moving, dt);
     });
-    player.visible = S.mode !== 'title' && PL.onFoot;
+    for (const p of actors) {const mesh = dialogMeshes.get(p), key = realPedTemplates[personKey(p)] ? personKey(p) : null;
+      if (mesh && (mesh.userData.realKey || null) !== key) {mesh.parent.remove(mesh); dialogMeshes.delete(p);}}
+    sync(dialogMeshes, S.mode==='dialog'?actors:[], p=>realPedTemplates[personKey(p)]?realPerson(personKey(p),dialogScene):person(p,false,dialogScene), (p,mesh)=>mesh.userData.realBones?animateRealPerson(p,mesh,false,dt):animatePerson(p,mesh,false,dt));
+    if (realPedTemplates.male && !player.userData.realBones) {
+      player.parent.remove(player); dialogPlayer.parent.remove(dialogPlayer);
+      player = realPerson('male'); dialogPlayer = realPerson('male', dialogScene);
+    }
+    player.visible = S.mode !== 'title' && S.mode !== 'dialog' && PL.onFoot;
     if (player.visible) animatePerson(PL, player, !!PL.moving, dt);
+    dialogPlayer.visible = S.mode === 'dialog' && PL.onFoot && actors.length > 0;
+    if (dialogPlayer.visible) animatePerson(PL, dialogPlayer, false, dt);
     // Markers: mission givers, objectives and the GPS arrow.
     syncMarkers(S.mode === 'title' ? [] : markers);
     const actor = PL.veh || PL;
@@ -1467,6 +1499,7 @@ window.createChaleScene = function createChaleScene(data) {
       arrow.rotation.set(0, -ang, 0); arrow.rotateZ(0.5); arrow.material.color.set(arrowTo.color || '#f5b300');
     }
     // Chase the player or vehicle while leaving enough road visible to steer.
+    const meeting = S.mode === 'dialog' && actors.length && PL.onFoot;
     if (PL.veh) {
       const v = PL.veh, sp = Math.hypot(v.vx, v.vy);
       let targetYaw = v.a;
@@ -1475,7 +1508,7 @@ window.createChaleScene = function createChaleScene(data) {
       if (orbitTime > 0) orbitTime -= dt;
       else yaw += Math.atan2(Math.sin(targetYaw - yaw), Math.cos(targetYaw - yaw)) * Math.min(1, dt * 3.2);
       fov = lerp(fov, views[view].fov + clamp(sp / 330, 0, 1) * 5, Math.min(1, dt * 3));
-    } else {if (orbitTime > 0) orbitTime -= dt; fov = lerp(fov, views[view].fov, Math.min(1, dt * 3));}
+    } else {if (orbitTime > 0) orbitTime -= dt; fov = lerp(fov, meeting ? 48 : views[view].fov, Math.min(1, dt * 3));}
     if (Math.abs(camera.fov - fov) > 0.05) {camera.fov = fov; camera.updateProjectionMatrix();}
     const focus = S.focus || actor;
     const vw = views[view];
@@ -1496,6 +1529,16 @@ window.createChaleScene = function createChaleScene(data) {
     const shake = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : (S.shake || 0) * 0.012;
     if (shake) camera.position.add(new THREE.Vector3((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake));
     camera.lookAt(aimAt);
+    if (meeting) {
+      camera.updateMatrixWorld();
+      const place = (mesh, x) => {
+        mesh.position.copy(camera.localToWorld(tmpV.set(x, -1.2, -4.3)));
+        mesh.rotation.y = -Math.atan2(camera.position.z - mesh.position.z, camera.position.x - mesh.position.x);
+      };
+      const gap = camera.aspect < 0.8 ? 0.43 : 0.9;
+      place(dialogPlayer, -gap);
+      let i = 0; for (const mesh of dialogMeshes.values()) place(mesh, gap + i++ * gap * 0.8);
+    }
     sky.position.copy(camera.position);
     // Sun and shadow frustum follow the player; snapped to texels so shadows do not shimmer.
     const texel = 92 / sun.shadow.mapSize.x;
@@ -1510,7 +1553,9 @@ window.createChaleScene = function createChaleScene(data) {
     foam.position.z = SEA_Y * T * U - 0.6 + Math.sin(S.t * 0.8) * 0.5; M.foam.opacity = 0.35 + Math.sin(S.t * 0.8 + 1) * 0.2;
     updateParticles(parts, dt);
     pMat.uniforms.scale.value = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360)) * 0.5;
-    renderer.render(scene, camera);
+    renderer.autoClear = false;
+    renderer.clear(); renderer.render(scene, camera);
+    if (S.mode === 'dialog' && actors.length) {renderer.clearDepth(); renderer.render(dialogScene, camera);}
   }
   function resize(w, h) {
     camera.aspect = w / h; camera.updateProjectionMatrix();

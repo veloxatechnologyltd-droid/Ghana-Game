@@ -681,7 +681,7 @@ function findSpot(px,py,pred){
 
 /* ================= STATE ================= */
 const GOAL=12000;
-const S={mode:'title',money:0,dm:0,clock:6*60+40,wanted:0,lostT:0,crimeT:-9,t:0,done:{},best:{},jobsBest:{},jobSeen:{},stats:{},cur:null,job:null,event:null,eventT:60,track:null,replay:false,mstate:'idle',step:0,ss:{},ms:{tags:[]},timer:-1,cool:0,phoned:{},pass:0,chatT:8,radio:1,muted:false,funeral:false,shake:0,bustT:0,zone:'',zoneT:0,djT:30,later:[],objTarget:null,mustLeave:false,focus:null,titleX:6*T,lastMoneyShown:-1,garage:[],gsel:0,fleet:[],fleetT:0,fleetDay:'',fleetStreak:0,rank:0,trackPlace:null,shopLeave:null,phoneTab:'story'};
+const S={mode:'title',money:0,dm:0,clock:6*60+40,wanted:0,lostT:0,crimeT:-9,t:0,done:{},best:{},jobsBest:{},jobSeen:{},stats:{},neighbourChoice:'',cur:null,job:null,event:null,eventT:60,track:null,replay:false,mstate:'idle',step:0,ss:{},ms:{tags:[]},timer:-1,cool:0,phoned:{},pass:0,chatT:8,radio:1,muted:false,funeral:false,shake:0,bustT:0,zone:'',zoneT:0,djT:30,later:[],objTarget:null,mustLeave:false,focus:null,titleX:6*T,lastMoneyShown:-1,garage:[],gsel:0,fleet:[],fleetT:0,fleetDay:'',fleetStreak:0,rank:0,trackPlace:null,shopLeave:null,phoneTab:'story'};
 const PL={x:0,y:0,a:-Math.PI/2,onFoot:true,veh:null,hp:100,ph:0,downT:0,walkSpeed:0,running:false,runMode:false,limit:0};
 let threeScene=null;
 const CAMERA_VIEWS=[
@@ -695,7 +695,7 @@ let pallbearers=null;
 const SAVE='chalecity.v2',OLD_SAVE='chalecity.v1';
 function save(){
   for(const r of S.garage){const v=liveCar(r);if(v){r.hp=Math.round(v.hp);r.fuel=Math.round(v.fuel)}}
-  try{localStorage.setItem(SAVE,JSON.stringify({v:2,money:S.money,done:S.done,best:S.best,jobsBest:S.jobsBest,jobSeen:S.jobSeen,stats:S.stats,phoned:S.phoned,clock:S.clock,
+  try{localStorage.setItem(SAVE,JSON.stringify({v:2,money:S.money,done:S.done,best:S.best,jobsBest:S.jobsBest,jobSeen:S.jobSeen,stats:S.stats,neighbourChoice:S.neighbourChoice,phoned:S.phoned,clock:S.clock,
     garage:S.garage,fleet:S.fleet,fleetT:S.fleetT,fleetDay:S.fleetDay,fleetStreak:S.fleetStreak,rank:S.rank}))}catch(e){}
 }
 function loadSave(){
@@ -709,7 +709,7 @@ function loadSave(){
 }
 
 /* ================= MISSIONS ================= */
-const SPK={'Abu':['#1d4fa3','AB'],'Pastor Blessing':['#6b2fa3','PB'],'Pastor Blessing (speaker)':['#6b2fa3','PB'],'Sergeant Mensah':['#1b2a55','SM'],'Market woman':['#e86a1c','MW'],'Kwesi':['#d99a00','KB'],'Auntie Naa':['#0a7a45','AN'],'Uncle Fiifi':['#d21034','UF'],'Maame Adwoa':['#e86a1c','MA'],'Lawyer Agyekum':['#2b5fb3','LA'],'Land guard':['#5d5d5d','LG'],'Sakawa boy':['#7d838a','SB'],'Master Kpakpo':['#8a5a2b','MK'],'Mate':['#d21034','M'],'Passenger':['#7a6a5a','P'],'Customer':['#7a6a5a','C'],'Chairman Odartey':['#3b2a1a','CO'],'The Honourable':['#4b3f8a','TH'],'Odartey boy':['#2a2a2a','OB'],'Fitter Kojo':['#8a5a2b','FK'],'Judge':['#5a1f2e','J']};
+const SPK={'Abu':['#1d4fa3','AB'],'Pastor Blessing':['#6b2fa3','PB'],'Pastor Blessing (speaker)':['#6b2fa3','PB'],'Sergeant Mensah':['#1b2a55','SM'],'Market woman':['#e86a1c','MW'],'Kwesi':['#d99a00','KB'],'Auntie Naa':['#0a7a45','AN'],'Auntie Esi':['#9b4d27','AE'],'Akosua':['#2b6b78','AK'],'Uncle Fiifi':['#d21034','UF'],'Maame Adwoa':['#e86a1c','MA'],'Lawyer Agyekum':['#2b5fb3','LA'],'Land guard':['#5d5d5d','LG'],'Sakawa boy':['#7d838a','SB'],'Master Kpakpo':['#8a5a2b','MK'],'Mate':['#d21034','M'],'Passenger':['#7a6a5a','P'],'Customer':['#7a6a5a','C'],'Chairman Odartey':['#3b2a1a','CO'],'The Honourable':['#4b3f8a','TH'],'Odartey boy':['#2a2a2a','OB'],'Fitter Kojo':['#8a5a2b','FK'],'Judge':['#5a1f2e','J']};
 const MISSIONS=[
  {id:'m1',req:[],par:75,dmgPar:15,title:'Akwaaba, Kwesi',at:[9,61],giver:'Auntie Naa',hint:'Go home to Auntie Naa at the family house in Jamestown.',
   intro:[['Auntie Naa','Kwesi! Eiii, is this you? London has made you fat oh!'],
@@ -839,6 +839,14 @@ const MISSIONS=[
    {t:'goto',at:[20,12],need:'hot',stop:true,label:'Kaneshie garage',text:'Deliver the Benz to the garage in Kaneshie.'}],
   reward:1200,rewardLabel:"Sergeant Mensah's 'transport money'",
   outro:[['Sergeant Mensah (phone)',"You see? You are a natural. If you ever get into trouble, call me. Small trouble, not big trouble."]]},
+ {id:'s4',req:['m1'],par:180,dmgPar:15,title:"Auntie Esi's Supper",at:[9,53],giver:'Auntie Esi',hint:'Auntie Esi is waiting near the Jamestown junction.',
+  intro:[['Auntie Esi','Kwesi Boateng! Your father used to stop at my stall every evening. He always asked if my daughter had eaten.'],
+   ['Auntie Esi','Akosua is on a long shift at Korle Bu. I made kenkey and fish for her, but I cannot leave the stall. Can you take it to her?'],
+   ['Kwesi','Of course, Auntie. I can carry it.']],
+  steps:[{t:'goto',at:[14,38],need:'any',stop:true,label:'Korle Bu',text:'Take Auntie Esi’s supper to Akosua at Korle Bu.',say:['Akosua','Medaase, Kwesi. Tell Mum I have eaten. And take this towards your father’s funeral.']},
+   {t:'goto',at:[9,61],stop:true,label:'Family house',text:'Go home and let Auntie Naa know Akosua got her supper.'}],
+  reward:100,rewardLabel:'Funeral contribution from Akosua',
+  outro:()=>S.neighbourChoice==='fare'?[['Auntie Naa','Esi says Akosua got her supper. She paid your fare? Good. Petrol is not free, my son.'],['Auntie Naa','Your papa would be glad you took care of our people. Come and eat before you go out again.']]:[['Auntie Naa','Esi says you refused her money. Your papa used to do that for her too.'],['Auntie Naa','Akosua has eaten, and there is food for you here as well. Come and sit small.']]},
  {id:'m7',req:['m6'],par:220,dmgPar:20,title:'Who Sold The Land?',at:[49,38],giver:'Lawyer Agyekum',hint:'Lawyer Agyekum has news about the forged land papers.',final2:true,
   phone:[['Lawyer Agyekum (phone)',"Mr. Boateng. I am sorry to disturb you after the funeral. I traced the signature on the forged papers."],['Lawyer Agyekum (phone)',"Come to my chambers. And come alone."]],
   intro:[['Lawyer Agyekum','The man who sold your father\'s land drives a white trotro. He collects his money in Adabraka every Friday. That is today.'],
@@ -1010,11 +1018,21 @@ function addMoney(n,label){S.money=Math.max(0,S.money+n);if(n>0){toast('+'+fmt(n
 
 /* dialogue */
 let dlg=null;
-function say(lines,cb){dlg={lines,i:0,shown:0,cb};S.prevMode=S.mode==='dialog'?(S.prevMode||'play'):S.mode;S.mode='dialog';el.dlg.hidden=false;el.touch.hidden=true;renderDlg(true)}
+const dialogActors=[];
+const WOMEN=new Set(['Auntie Naa','Auntie Esi','Akosua','Maame Adwoa','Market woman','Judge','Pregnant woman']);
+function say(lines,cb){
+  dialogActors.length=0;el.radio.classList.remove('show');radioT=0;
+  const names=[...new Set(lines.map(l=>l[0]).filter(n=>n!=='Kwesi'&&!/ \((phone|speaker)\)$/.test(n)))];
+  const base=PL.onFoot?{x:PL.x+Math.cos(PL.a)*19,y:PL.y+Math.sin(PL.a)*19}:S.cur&&S.step<0&&S.cur.at?P(...S.cur.at):{x:PL.x+Math.cos(PL.a)*28,y:PL.y+Math.sin(PL.a)*28};
+  names.forEach((name,i)=>{const side=i-(names.length-1)/2,pt=findSpot(base.x-Math.sin(PL.a)*side*30,base.y+Math.cos(PL.a)*side*30,pedOK),face=Math.atan2(PL.y-pt.y,PL.x-pt.x),camera=PL.a+Math.PI;dialogActors.push({name,x:pt.x,y:pt.y,a:face+Math.atan2(Math.sin(camera-face),Math.cos(camera-face))*0.45,kind:WOMEN.has(name)?'woman':'man',state:'wait',activity:'stand',moving:false,ph:0,skin:'#573621',c1:(SPK[name]||['#8a5a2b'])[0],c2:'#272a2d',walkRow:WOMEN.has(name)?1:0,talking:false})});
+  dlg={lines,i:0,shown:0,cb,focus:S.focus};
+  if(!S.focus&&dialogActors.length)S.focus={x:(PL.x+dialogActors[0].x)/2,y:(PL.y+dialogActors[0].y)/2};
+  S.prevMode=S.mode==='dialog'?(S.prevMode||'play'):S.mode;S.mode='dialog';el.dlg.hidden=false;el.touch.hidden=true;renderDlg(true);
+}
 function renderDlg(newLine){
   const L=dlg.lines[dlg.i];let who=L[0],phone=false;
   if(who.endsWith(' (phone)')){who=who.slice(0,-8);phone=true}
-  if(newLine){const sp=SPK[who]||['#555','?'];el.dlgPic.style.background=sp[0];el.dlgPic.textContent=sp[1];el.dlgWho.innerHTML=`<span style="color:${sp[0]==='#d99a00'?'#9a6b00':sp[0]}">${esc(who.toUpperCase())}</span>`+(phone?'<em>On the phone</em>':'')}
+  if(newLine){const sp=SPK[who]||['#555','?'];el.dlgPic.style.background=sp[0];el.dlgPic.textContent=sp[1];el.dlgWho.innerHTML=`<span style="color:${sp[0]==='#d99a00'?'#9a6b00':sp[0]}">${esc(who.toUpperCase())}</span>`+(phone?'<em>On the phone</em>':'');for(const p of dialogActors)p.talking=p.name===who}
   el.dlgTxt.textContent=L[1].slice(0,Math.floor(dlg.shown));
   el.dlgNext.textContent=dlg.i<dlg.lines.length-1?(isTouch?'Tap for next':'Space for next'):(isTouch?'Tap to continue':'Space to continue');
 }
@@ -1022,7 +1040,7 @@ function advance(){
   if(!dlg)return;const L=dlg.lines[dlg.i];
   if(dlg.shown<L[1].length){dlg.shown=L[1].length;renderDlg(false);return}
   dlg.i++;dlg.shown=0;
-  if(dlg.i>=dlg.lines.length){const cb=dlg.cb;dlg=null;el.dlg.hidden=true;S.mode=S.prevMode||'play';if(S.mode==='play'&&isTouch)el.touch.hidden=false;cb&&cb();return}
+  if(dlg.i>=dlg.lines.length){const cb=dlg.cb;S.focus=dlg.focus;dlg=null;dialogActors.length=0;el.dlg.hidden=true;S.mode=S.prevMode||'play';if(S.mode==='play'&&isTouch)el.touch.hidden=false;cb&&cb();return}
   renderDlg(true);sfxBlip();
 }
 el.dlg.addEventListener('pointerdown',e=>{e.preventDefault();advance()});
@@ -1209,7 +1227,7 @@ function renderPhone(){
 const lockedHTML=k=>`<p class="lede">Unlocks after “${esc(MISSIONS.find(x=>x.id===FEATURES[k].req).title)}”.</p>`;
 function phoneStory(){
   const storyBeat=!isDone('m1')?'Papa has died. Auntie Naa needs help paying for his funeral. Go home to Jamestown.':!isDone('m4')?'Earn funeral money by driving for the people Papa knew. Lawyer Agyekum also has news about the family land.':!isDone('m6')?'Someone forged papers to take Papa’s land. Keep the funeral on track while you find out who is behind it.':!isDone('m7')?'The funeral is over, but the forged land sale is still a mystery. Lawyer Agyekum has traced a clue.':!isDone('c1')?'Uncle Fiifi’s trotro was linked to the sale. Meet him at Teshie beach to hear his side.':!isDone('c5')?'Papa borrowed from Chairman Odartey for Kwesi’s school fees. Odartey now threatens the family house. Find his ledger.':!isDone('c6')?'You have the ledger. Get it to the High Court before Odartey can stop you.':'Odartey is in custody and the family land is safe. Accra still has people who need a ride.';
-  let h=`<p class="lede">${storyBeat}</p><p class="fine">${Object.keys(S.done).length} of ${MISSIONS.length} missions · ★ ${totalStars()} of ${MISSIONS.length*3} · ${fmt(S.money)}</p>`;
+  let h=`<p class="lede">${storyBeat}</p>${isDone('s4')?`<p class="fine">Jamestown remembers: you took Auntie Esi’s supper to Akosua and ${S.neighbourChoice==='fare'?'accepted the fare':'helped without taking a fare'}.</p>`:''}<p class="fine">${Object.keys(S.done).length} of ${MISSIONS.length} missions · ★ ${totalStars()} of ${MISSIONS.length*3} · ${fmt(S.money)}</p>`;
   const groups=[['Chapter 1 · The funeral',m=>m.id[0]==='m'],['Side stories',m=>m.id[0]==='s'],["Chapter 2 · Papa's debts",m=>m.id[0]==='c']];
   for(const [title,f] of groups){
     const list=MISSIONS.filter(f);if(list[0].id[0]==='c'&&!isDone('m7')&&!list.some(m=>isDone(m.id)))continue;
@@ -1714,10 +1732,15 @@ function startMission(m,replay){
   if(m.clock!=null){S.clock=m.clock*60;if(m.clockText)toast(m.clockText,m.title)}
   S.cur=m;S.replay=!!replay;S.mstate='active';S.step=-1;S.ms={tags:[],t:0,dmg:0,hits:0,dmg0:0};S.timer=-1;S.pass=0;S.objTarget=null;S.track=null;
   sfxBlip();
-  if(!replay&&m.intro)say(m.intro,nextStep);
+  if(!replay&&m.intro)say(m.intro,m.id==='s4'&&!S.neighbourChoice?neighbourChoice:nextStep);
   // Replays still get a greeting and the giver's brief, so meeting someone is never silent.
   else if(m.giver)say([[m.giver,pick(REPLAY_HI)],...(m.intro?[m.intro[m.intro.length-1]]:[])],nextStep);
   else nextStep();
+}
+function neighbourChoice(){
+  overlay('Auntie Esi’s supper','Auntie Esi offers GH₵ 80 for petrol. What does Kwesi say?',
+    [['Take the fare',()=>{S.mode='play';if(isTouch)el.touch.hidden=false;S.neighbourChoice='fare';addMoney(80,'Petrol money from Auntie Esi');save();say([['Auntie Esi','Take it, my son. Petrol costs money. Please make sure Akosua eats while it is hot.']],nextStep)}],
+     ['Help for free',()=>{S.mode='play';if(isTouch)el.touch.hidden=false;S.neighbourChoice='free';save();say([['Auntie Esi','Ei, just like your father. Akosua will be glad to see you. Go safely.']],nextStep)},'alt']]);
 }
 const REPLAY_HI=["Ah, you're back! You want to do it again? Okay, listen well.","Chale, again? Fine. This time do it better.","Kwesi! You came back. Let's go one more time."];
 function nextStep(){
@@ -1863,7 +1886,7 @@ function showResult(m,r){
     <p class="pay">${r.first?esc(m.rewardLabel):'Replay pay'} <b>+${fmt(r.pay)}</b>${r.bonus?`<br>New star bonus <b>+${fmt(r.bonus)}</b>`:''}</p>
     <p class="fine">${totalStars()} of ${MISSIONS.length*3} stars collected${r.stars<3?' · replay any time from MISSIONS for the full set':''}</p>`;
   const fin=()=>{if(r.first&&m.final)startFuneral();else if(r.first&&m.final2)toBeContinued();else if(r.first&&m.final3)chapterTwoEnd();else nudge()};
-  const go=()=>{S.mode='play';if(isTouch)el.touch.hidden=false;if(r.first&&m.outro)say(m.outro,fin);else fin()};
+  const go=()=>{S.mode='play';if(isTouch)el.touch.hidden=false;if(r.first&&m.outro)say(typeof m.outro==='function'?m.outro():m.outro,fin);else fin()};
   const btns=[['Continue',go]];
   if(r.stars<3)btns.push(['Replay for ★★★',()=>{S.mode='play';if(isTouch)el.touch.hidden=false;retry(m)},'alt']);
   overlay('Mission passed','',btns,html);
@@ -1995,13 +2018,14 @@ function beginFare(m){
 }
 function makeTaxiFare(){
   const kind=weighted(FARES),who=kind.name||pick(FARE_NAMES),from=randomPickup(),dest=randomPlace(from,650,2100);
+  const friend=isDone('s4')&&kind.k==='normal'?(who==='Auntie Esi'?{hello:['Kwesi! Akosua said you brought her supper hot. Take me to {d}, my son.'],chat:['Akosua is on duty again. These nurses work hard oh.'],thanks:['Medaase, Kwesi. Greet Auntie Naa for me.']}:who==='Akosua'?{hello:['Kwesi! I just finished my shift. {d}, please, before I fall asleep standing.'],chat:['Mum says you stopped by the stall again. She was happy to see you.'],thanks:['Thanks for the ride. Tell Mum I will come home after I rest.']}:null):null;
   const ped=mkPed(from.x,from.y,kind.k==='first_daughter'||kind.k==='baby'||/^(Auntie|Abena|Ama|Efua|Nana|Akosua)/.test(who)?'woman':'man');ped.state='wait';ped.wave=true;ped.keep=true;ped.a=Math.random()*TAU;
   if(kind.k==='big'){ped.c1='#1d1d1d';ped.c2='#1d1d1d'}
   const d=dist(from.x,from.y,dest.pt.x,dest.pt.y),secs=Math.round(d/kind.speed+15);
   const maxKmh={baby:70,king:75,eggs:80,big:85}[kind.k];
-  return {id:'job',job:true,title:`Taxi · ${who}`,who,ped,people:[ped],pickupName:who,booking:`${who} booked your taxi. Pickup: waving person at the map marker. Drop-off: ${dest.name}. About ${(d/1000).toFixed(1)} km. ${kind.caution||'Stop for boarding, then follow the route. The meter counts distance.'}${maxKmh?` Keep under ${maxKmh} km/h.`:''}`,fareRate:0.08*kind.mult,maxKmh,jobFragile:kind.fragile,fragileMsg:kind.fragileMsg,chat:kind.chat,thanks:pick(kind.thanks),doneLabel:`Fare · ${dest.name}`,
+  return {id:'job',job:true,title:`Taxi · ${who}`,who,ped,people:[ped],pickupName:who,booking:`${who} booked your taxi. Pickup: waving person at the map marker. Drop-off: ${dest.name}. About ${(d/1000).toFixed(1)} km. ${kind.caution||'Stop for boarding, then follow the route. The meter counts distance.'}${maxKmh?` Keep under ${maxKmh} km/h.`:''}`,fareRate:0.08*kind.mult,maxKmh,jobFragile:kind.fragile,fragileMsg:kind.fragileMsg,chat:friend?friend.chat:kind.chat,thanks:pick(friend?friend.thanks:kind.thanks),doneLabel:`Fare · ${dest.name}`,
     basePay:Math.round((25+d*0.08)*kind.mult),timeout:pick(['"Stop here! I will walk!" They paid nothing.','"Too slow!" They jumped out at the traffic light.']),
-    steps:[{t:'pickup',pt:from,ped,need:'job',label:who,expire:kind.k==='first_daughter'?70:null,text:`${who} is waving for a taxi. Pick them up.`,say:[who,pick(kind.hello).replace('{d}',dest.name)]},
+    steps:[{t:'pickup',pt:from,ped,need:'job',label:who,expire:kind.k==='first_daughter'?70:null,text:`${who} is waving for a taxi. Pick them up.`,say:[who,pick(friend?friend.hello:kind.hello).replace('{d}',dest.name)]},
       {t:'timer',secs},
       {t:'goto',pt:dest.pt,need:'job',stop:true,label:dest.name,text:`Take ${who} to ${dest.name}.`},
       {t:'timerStop'}]};
@@ -2421,7 +2445,7 @@ function updCommon(dt){
   if(zoneT>0){zoneT-=dt;if(zoneT<=0)el.zone.classList.remove('show')}
   if(S.mode==='dialog'||S.mode==='overlay'){updCamSoft(dt)}
 }
-function updCamSoft(dt){const tx=S.focus?S.focus.x:PL.x,ty=S.focus?S.focus.y:PL.y;const k=1-Math.exp(-dt*3);cam.x=lerp(cam.x,tx,k);cam.y=lerp(cam.y,ty,k);if(S.focus)cam.z=lerp(cam.z,1.55,k)}
+function updCamSoft(dt){const tx=S.focus?S.focus.x:PL.x,ty=S.focus?S.focus.y:PL.y;const k=1-Math.exp(-dt*3);cam.x=lerp(cam.x,tx,k);cam.y=lerp(cam.y,ty,k);if(S.focus)cam.z=lerp(cam.z,S.mode==='dialog'?5.2:1.55,k)}
 
 /* ================= HUD ================= */
 let hudAcc=0,lastStars=-1;
@@ -2902,7 +2926,7 @@ function render(){
   if(threeScene){
     // Keep the GPS arrow until the player is actually inside the marker, so it never vanishes nearby.
     const o=S.objTarget,far=o&&dist(o.x,o.y,PL.x,PL.y)>(o.r||(o.kind==='veh'?30:50));
-    threeScene.render({vehicles,peds,parts,markers:markers3d(),arrowTo:far?{x:o.x,y:o.y,color:o.kind==='target'?'#ff3b4e':o.kind==='veh'?'#3fd27a':S.track&&o.kind==='giver'?'#7fd6ff':'#f5b300'}:null});
+    threeScene.render({vehicles,peds,actors:dialogActors,parts,markers:markers3d(),arrowTo:far?{x:o.x,y:o.y,color:o.kind==='target'?'#ff3b4e':o.kind==='veh'?'#3fd27a':S.track&&o.kind==='giver'?'#7fd6ff':'#f5b300'}:null});
     if(S.mode!=='title')drawMinimap();return}
   const z=cam.z*cam.zoom*BASE;ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#0d0b0a';ctx.fillRect(0,0,W,H);
   const sh=matchMedia('(prefers-reduced-motion: reduce)').matches?0:S.shake;const sx=(Math.random()-0.5)*sh,sy=(Math.random()-0.5)*sh;
@@ -2915,6 +2939,7 @@ function render(){
   drawMarkersGround();
   for(const v of vehicles)if(v.x>V.L-60&&v.x<V.R+60&&v.y>V.T-60&&v.y<V.B+60)drawVeh(v);
   for(const p of peds)if(p.state!=='down'&&p.x>V.L-20&&p.x<V.R+20&&p.y>V.T-20&&p.y<V.B+20)drawPed(p,false);
+  if(S.mode==='dialog')for(const p of dialogActors)if(p.x>V.L-20&&p.x<V.R+20&&p.y>V.T-20&&p.y<V.B+20)drawPed(p,false);
   if(S.mode!=='title'&&PL.onFoot)drawPed({x:PL.x,y:PL.y,a:PL.a,kind:'man',state:PL.downT>0?'down':'walk',ph:PL.ph,moving:PL.moving,c1:'#151515',c2:'#c8102e',skin:'#4a2c1c'},true);
   drawPallbearers();
   for(const p of parts){const a=p.life/p.max;ctx.fillStyle=p.c+(a*0.5)+')';circ(p.x,p.y,p.size*(1.6-a))}
@@ -2947,7 +2972,7 @@ function newGame(saved){
   resize();
   vehicles.length=0;peds.length=0;parts.length=0;bubbles.length=0;pallbearers=null;
   for(let i=decor.length-1;i>=0;i--)if(decor[i].k==='canopy')decor.splice(i,1);
-  Object.assign(S,{mode:'play',money:saved?saved.money:0,dm:saved?saved.money:0,clock:saved&&saved.clock?saved.clock:6*60+40,wanted:0,lostT:0,done:saved?{...saved.done}:{},best:saved?{...saved.best}:{},jobsBest:saved?{...(saved.jobsBest||{})}:{},jobSeen:saved?{...(saved.jobSeen||{})}:{},stats:saved?{...(saved.stats||{})}:{},cur:null,job:null,event:null,eventT:50,track:null,mstate:'idle',step:0,ss:{},ms:{tags:[]},timer:-1,cool:saved?2:0.6,phoned:saved?{...(saved.phoned||{})}:{},pass:0,funeral:false,later:[],objTarget:null,mustLeave:null,focus:null,zone:'',lastMoneyShown:-1});
+  Object.assign(S,{mode:'play',money:saved?saved.money:0,dm:saved?saved.money:0,clock:saved&&saved.clock?saved.clock:6*60+40,wanted:0,lostT:0,done:saved?{...saved.done}:{},best:saved?{...saved.best}:{},jobsBest:saved?{...(saved.jobsBest||{})}:{},jobSeen:saved?{...(saved.jobSeen||{})}:{},stats:saved?{...(saved.stats||{})}:{},neighbourChoice:saved&&saved.neighbourChoice||'',cur:null,job:null,event:null,eventT:50,track:null,mstate:'idle',step:0,ss:{},ms:{tags:[]},timer:-1,cool:saved?2:0.6,phoned:saved?{...(saved.phoned||{})}:{},pass:0,funeral:false,later:[],objTarget:null,mustLeave:null,focus:null,zone:'',lastMoneyShown:-1});
   PL.veh=null;PL.onFoot=true;PL.hp=100;PL.downT=0;PL.moving=false;PL.walkSpeed=0;PL.running=false;const p=P(9,62);PL.x=p.x;PL.y=p.y;PL.a=0;cam.x=p.x;cam.y=p.y;cam.z=3.4;cam.zoom=1;cam.view=0;cam.angle=CAMERA_VIEWS[0].angle;cam.tilt=CAMERA_VIEWS[0].tilt;
   if(threeScene)threeScene.resetCamera();
   for(let i=0;i<2;i++){const t=mkVeh('trotro',P(39+i,17).x,P(39,17).y,Math.PI/2,{keep:true});t.slogan=i?'SEA NEVER DRY':'GOD DEY'}
